@@ -1,0 +1,5 @@
+{
+  "url": "https://cryptochess.onrender.com",
+  "name": "CryptoChess Blitz",
+  "iconUrl": "https://cryptochess.onrender.com/icon.png"
+}
