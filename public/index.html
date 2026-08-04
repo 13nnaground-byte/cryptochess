@@ -188,6 +188,9 @@
     let playerColor = null;
     let currentGameId = null;
 
+    // Այստեղ գրեք ձեր գլխավոր (Treasury) դրամապանակի հասցեն, որտեղ պետք է նստեն խաղադրույքները
+    const TREASURY_WALLET = "UQANP71Yq43Vl0fV1R_k93393b-5h-8669485h9394993949"; 
+
     socket.on('statsUpdate', (data) => {
       document.getElementById('onlineCount').innerText = data.online;
       document.getElementById('totalUsersCount').innerText = data.totalUsers;
@@ -236,7 +239,7 @@
       document.getElementById('profileModal').style.display = 'none';
     });
 
-const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
+    const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
         manifestUrl: 'https://cryptochess-kxfp.onrender.com/tonconnect-manifest.json',
         buttonRootId: 'ton-connect-landing'
     });
@@ -272,12 +275,43 @@ const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
       });
     }
 
-    document.getElementById('findMatchBtn').addEventListener('click', () => {
+    // «Գտնել մրցակից» սեղմելիս նախ կատարվում է TON փոխանցում
+    document.getElementById('findMatchBtn').addEventListener('click', async () => {
       const bet = parseInt(document.getElementById('betAmount').value);
-      document.getElementById('winner-banner').style.display = 'none';
-      document.getElementById('status').innerText = `Որոնում ենք մրցակից (${bet} TON)...`;
-      document.getElementById('moveList').innerHTML = '';
-      socket.emit('findMatch', { wallet: walletAddress, bet: bet });
+      
+      if (!tonConnectUI.connected) {
+        alert("Խնդրում ենք միացնել դրամապանակը:");
+        return;
+      }
+
+      document.getElementById('status').innerText = `Հաստատեք ${bet} TON վճարումը դրամապանակում...`;
+
+      const transaction = {
+        validUntil: Math.floor(Date.now() / 1000) + 60,
+        messages: [
+          {
+            address: TREASURY_WALLET,
+            amount: (bet * 1000000000).toString(), // Nanotons
+            payload: "CryptoChess Entry Fee"
+          }
+        ]
+      };
+
+      try {
+        // Բացվում է Tonkeeper-ը հաստատման համար
+        await tonConnectUI.sendTransaction(transaction);
+        
+        document.getElementById('winner-banner').style.display = 'none';
+        document.getElementById('status').innerText = `Որոնում ենք մրցակից (${bet} TON)...`;
+        document.getElementById('moveList').innerHTML = '';
+        
+        // Ուղարկում ենք սերվերին միայն հաջող վճարումից հետո
+        socket.emit('joinQueue', { wallet: walletAddress, bet: bet });
+
+      } catch (e) {
+        console.error("Վճարումը չեղարկվեց:", e);
+        document.getElementById('status').innerText = "Վճարումը չեղարկվեց կամ ձախողվեց:";
+      }
     });
 
     document.getElementById('drawArea').addEventListener('click', (e) => {
