@@ -153,7 +153,7 @@ io.on('connection', (socket) => {
       activeGames[gameId] = { 
         id: gameId,
         chess: chess, 
-        p1: { socketId: socket.id, wallet: wallet, bet: bet },   
+        p1: { socketId: socket.id, wallet: wallet, bet: bet },    
         p2: opponent, 
         bet: bet, 
         prizePool: prizePool,
@@ -173,7 +173,7 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Խաղացողը ինքնակամ չեղարկում է հերթը (օրինակ 30վրկ հետո կամ ցանկացած պահի)
+  // Խաղացողը ինքնակամ չեղարկում է հերթը
   socket.on('cancelQueue', async () => {
     const index = waitingPlayers.findIndex(p => p.socketId === socket.id);
     if (index !== -1) {
@@ -269,14 +269,12 @@ io.on('connection', (socket) => {
     onlineCount = Math.max(0, onlineCount - 1);
     broadcastStats();
 
-    // 1. Եթե խաղացողը սպասման հերթում էր՝ անջատվելիս գումարը հետ ենք ուղարկում
     const index = waitingPlayers.findIndex(p => p.socketId === socket.id);
     if (index !== -1) {
       const player = waitingPlayers.splice(index, 1)[0];
       await sendTonToWallet(player.wallet, player.bet, 'CryptoChess Queue Disconnect Refund');
     }
 
-    // 2. Եթե խաղացողը ԱԿՏԻՎ ԽԱՂԻ մեջ էր՝ գումարը ՉԻ վերադարձվում, մրցակիցը հաղթում է
     for (const gameId in activeGames) {
       const game = activeGames[gameId];
       if (game.p1.socketId === socket.id || game.p2.socketId === socket.id) {
@@ -344,7 +342,7 @@ function startGameTimer(gameId) {
   game.timerInterval = setInterval(() => {
     const currentGame = activeGames[gameId];
     if (!currentGame) {
-      clearInterval(game.timerInterval);
+      if (game.timerInterval) clearInterval(game.timerInterval);
       return;
     }
 
@@ -355,7 +353,7 @@ function startGameTimer(gameId) {
     io.to(currentGame.p2.socketId).emit('timeUpdate', currentGame.time);
 
     if (currentGame.time[currentTurn] <= 0) {
-      clearInterval(game.timerInterval);
+      if (game.timerInterval) clearInterval(game.timerInterval);
       const winnerSocketId = currentTurn === 'w' ? currentGame.p2.socketId : currentGame.p1.socketId;
 
       recordGameResult(currentGame, winnerSocketId);
@@ -368,7 +366,10 @@ async function endGame(gameId, reason, winnerWallet) {
   const game = activeGames[gameId];
   if (!game) return;
 
-  if (game.timerInterval) clearInterval(game.timerInterval);
+  if (game.timerInterval) {
+    clearInterval(game.timerInterval);
+    game.timerInterval = null;
+  }
 
   if (reason === 'draw') {
     await sendTonToWallet(game.p1.wallet, 0.97, 'CryptoChess Draw Payout');
