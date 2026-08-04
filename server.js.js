@@ -17,11 +17,9 @@ app.use(express.json());
 app.get('/tonconnect-manifest.json', (req, res) => {
   res.json({
     "url": "https://cryptochess-kxfp.onrender.com",
-    "name": "CryptoChess Blitz",
-    "iconUrl": "https://cryptochess-kxfp.onrender.com/icon.png"
+    "name": "CryptoChess Blitz"
   });
 });
-
 const db = new sqlite3.Database('./cryptochess.db', (err) => {
   if (err) console.error('DB Error:', err.message);
   else console.log('📦 Միացավ SQLite տվյալների բազային');
