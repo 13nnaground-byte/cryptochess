@@ -105,6 +105,7 @@ db.run(`CREATE TABLE IF NOT EXISTS games_history (
 let waitingPlayers = []; // { socketId, wallet, bet }
 let activeGames = {};
 let onlineCount = 0;
+let lastActionTimes = {}; // Հակա-սպամ / Rate limit-ի համար
 
 const GAME_TIME = 180; // 3 րոպե
 
@@ -130,8 +131,15 @@ io.on('connection', (socket) => {
     });
   });
 
-  // Հերթագրում և հակառակորդի որոնում
+  // Հերթագրում և հակառակորդի որոնում (Անտիչիտ և բազմակի մուտքի արգելքով)
   socket.on('joinQueue', (data) => {
+    const now = Date.now();
+    if (lastActionTimes[socket.id] && (now - lastActionTimes[socket.id] < 1000)) {
+      socket.emit('errorMsg', 'Խնդրում ենք մի փոքր դանդաղ սեղմել:');
+      return;
+    }
+    lastActionTimes[socket.id] = now;
+
     const bet = data.bet || 1;
     const wallet = data.wallet || socket.userWallet;
     
@@ -140,9 +148,22 @@ io.on('connection', (socket) => {
       return;
     }
 
-    if (waitingPlayers.some(p => p.socketId === socket.id)) return;
+    // 1. Արդյոք այս դրամապանակն արդեն սպասման հերթում է՞
+    if (waitingPlayers.some(p => p.wallet === wallet || p.socketId === socket.id)) {
+      socket.emit('errorMsg', 'Այս դրամապանակն արդեն սպասման հերթում է:');
+      return;
+    }
 
-    const opponentIndex = waitingPlayers.findIndex(p => p.bet === bet && p.socketId !== socket.id);
+    // 2. Արդյոք այս դրամապանակն արդեն ԱԿՏԻՎ խաղի մե՞ջ է (Արգելում է միաժամանակ 2 խաղ խաղալ)
+    for (const gameId in activeGames) {
+      const g = activeGames[gameId];
+      if ((g.p1 && g.p1.wallet === wallet) || (g.p2 && g.p2.wallet === wallet)) {
+        socket.emit('errorMsg', 'Դուք արդեն ակտիվ խաղի մեջ եք:');
+        return;
+      }
+    }
+
+    const opponentIndex = waitingPlayers.findIndex(p => p.bet === bet && p.wallet !== wallet && p.socketId !== socket.id);
 
     if (opponentIndex !== -1) {
       const opponent = waitingPlayers.splice(opponentIndex, 1)[0];
@@ -183,10 +204,27 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Շախմատային քայլերի մշակում
+  // Շախմատային քայլերի մշակում (Rate Limit-ով և հերթի ստուգմամբ)
   socket.on('makeMove', ({ gameId, move }) => {
+    const now = Date.now();
+    if (lastActionTimes[socket.id] && (now - lastActionTimes[socket.id] < 300)) {
+      socket.emit('errorMsg', 'Շատ արագ եք քայլում:');
+      return;
+    }
+    lastActionTimes[socket.id] = now;
+
     const game = activeGames[gameId];
     if (!game) return;
+
+    // Ստուգում ենք՝ արդյոք քայլ անողը հենց այդ պահին խաղալու իրավունք ունի՞
+    const currentTurn = typeof game.chess.turn === 'function' ? game.chess.turn() : game.chess.turn;
+    const isP1Turn = currentTurn === 'w';
+    const isPlayer1 = socket.id === game.p1.socketId;
+
+    if ((isP1Turn && !isPlayer1) || (!isP1Turn && isPlayer1)) {
+      socket.emit('errorMsg', 'Ձեր հերթը չէ:');
+      return;
+    }
 
     try {
       const validMove = game.chess.move(move);
@@ -211,7 +249,6 @@ io.on('connection', (socket) => {
         const isDraw = typeof c.isDraw === 'function' ? c.isDraw() : c.in_draw();
 
         if (isCheckmate) {
-          const currentTurn = typeof c.turn === 'function' ? c.turn() : c.turn;
           const winnerSocketId = currentTurn === 'w' ? game.p2.socketId : game.p1.socketId;
           const winnerWallet = currentTurn === 'w' ? game.p2.wallet : game.p1.wallet;
 
@@ -264,10 +301,11 @@ io.on('connection', (socket) => {
     endGame(gameId, 'resign', winnerWallet);
   });
 
-  // Անջատման կառավարում (Anti-Cheat & Disconnect)
+  // Անջատման կառավարում և հիշողության մաքրում
   socket.on('disconnect', async () => {
     onlineCount = Math.max(0, onlineCount - 1);
     broadcastStats();
+    delete lastActionTimes[socket.id];
 
     const index = waitingPlayers.findIndex(p => p.socketId === socket.id);
     if (index !== -1) {

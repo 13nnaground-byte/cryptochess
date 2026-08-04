@@ -19,7 +19,14 @@
     .global-stats { display: flex; gap: 15px; font-size: 13px; color: #94a3b8; background: #131b2e; padding: 6px 12px; border-radius: 8px; border: 1px solid #1f293d; }
     .stat-item span { color: #38bdf8; font-weight: bold; }
 
-    .header-right { display: flex; align-items: center; gap: 15px; }
+    .header-right { display: flex; align-items: center; gap: 12px; }
+    
+    /* Լեզուների ընտրության ոճեր */
+    .lang-selector { display: flex; gap: 5px; background: #131b2e; padding: 4px; border-radius: 8px; border: 1px solid #1f293d; }
+    .lang-btn { background: transparent; border: none; cursor: pointer; font-size: 16px; padding: 4px 6px; border-radius: 6px; transition: 0.2s; }
+    .lang-btn:hover { background: #1e293b; }
+    .lang-btn.active { background: #0284c7; }
+
     .btn-profile { background: #1e293b; color: #38bdf8; border: 1px solid #334155; padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; display: none; }
     .btn-profile:hover { background: #334155; }
 
@@ -81,39 +88,48 @@
     <div class="logo">♟️ CryptoChess TON</div>
     
     <div class="global-stats">
-      <div class="stat-item">🟢 Օնլայն՝ <span id="onlineCount">0</span></div>
-      <div class="stat-item">👥 Ընդհանուր User՝ <span id="totalUsersCount">0</span></div>
+      <div class="stat-item">🟢 <span data-i18n="online">Օնլայն</span>՝ <span id="onlineCount">0</span></div>
+      <div class="stat-item">👥 <span data-i18n="totalUsers">Ընդհանուր User</span>՝ <span id="totalUsersCount">0</span></div>
     </div>
 
     <div class="header-right">
-      <button id="openProfileBtn" class="btn-profile">👤 Իմ Պրոֆիլը</button>
+      <!-- Լեզուների Ընտրության Կոճակներ -->
+      <div class="lang-selector">
+        <button class="lang-btn" onclick="setLanguage('hy')" title="Հայերեն">🇦🇲</button>
+        <button class="lang-btn" onclick="setLanguage('en')" title="English">🇬🇧</button>
+        <button class="lang-btn" onclick="setLanguage('ru')" title="Русский">🇷🇺</button>
+        <button class="lang-btn" onclick="setLanguage('zh')" title="中文">🇨🇳</button>
+        <button class="lang-btn" onclick="setLanguage('hi')" title="हिन्दी">🇮🇳</button>
+      </div>
+
+      <button id="openProfileBtn" class="btn-profile">👤 <span data-i18n="profile">Իմ Պրոֆիլը</span></button>
     </div>
   </header>
 
   <!-- 👤 Պրոֆիլի Մոդալ Պատուհան -->
   <div id="profileModal" class="modal-overlay">
     <div class="modal-content">
-      <h3>👤 Խաղացողի Պրոֆիլ</h3>
+      <h3 data-i18n="profileModalTitle">👤 Խաղացողի Պրոֆիլ</h3>
       <p style="font-size: 11px; color: #94a3b8; word-break: break-all;" id="modalWallet">Հասցե: -</p>
       
       <div class="modal-stats">
-        <div>Հաղթ.<b id="statWins">0</b></div>
-        <div>Պարտ.<b id="statLosses">0</b></div>
-        <div>Ոչ-ոքի<b id="statDraws">0</b></div>
+        <div><span data-i18n="wins">Հաղթանակներ</span><b id="statWins">0</b></div>
+        <div><span data-i18n="losses">Պարտություններ</span><b id="statLosses">0</b></div>
+        <div><span data-i18n="draws">Ոչ-ոքի</span><b id="statDraws">0</b></div>
       </div>
 
-      <label style="font-size: 12px; font-weight: bold; color: #94a3b8; margin-top: 5px;">Վերջին Խաղերի Պատմություն:</label>
+      <label style="font-size: 12px; font-weight: bold; color: #94a3b8; margin-top: 5px;" data-i18n="history">Խաղերի պատմություն:</label>
       <div class="history-container" id="historyList">
-        <div style="text-align: center; color: #64748b; padding: 15px; font-size: 12px;">Խաղեր դեռ չկան</div>
+        <div style="text-align: center; color: #64748b; padding: 15px; font-size: 12px;" data-i18n="noGames">Խաղեր դեռ չկան</div>
       </div>
 
-      <button class="close-modal" id="closeModalBtn">Փակել</button>
+      <button class="close-modal" id="closeModalBtn" data-i18n="close">Փակել</button>
     </div>
   </div>
 
   <div id="welcome-screen">
-    <h2>CryptoChess PvP</h2>
-    <p>Մուտք գործեք բացառապես TON դրամապանակով և խաղացեք 3 րոպեանոց blitz շախմատ իրական խաղադրույքներով:</p>
+    <h2 data-i18n="welcomeTitle">CryptoChess PvP</h2>
+    <p data-i18n="welcomeDesc">Մուտք գործեք բացառապես TON դրամապանակով և խաղացեք 3 րոպեանոց blitz շախմատ իրական խաղադրույքներով:</p>
 
     <div class="ton-login-btn-container" id="ton-connect-landing"></div>
   </div>
@@ -124,7 +140,7 @@
     <div class="game-layout">
       <div id="board-container">
         <div class="timer-box" id="opponentTimeBox" style="width: 380px; margin-bottom: 8px;">
-          <span>Մրցակից</span>
+          <span data-i18n="opponent">Մրցակից</span>
           <span id="opponentClock">03:00</span>
         </div>
 
@@ -139,16 +155,16 @@
         </div>
 
         <div class="timer-box" id="myTimeBox" style="width: 380px; margin-top: 8px;">
-          <span>Դուք</span>
+          <span data-i18n="you">Դուք</span>
           <span id="myClock">03:00</span>
         </div>
       </div>
 
       <div class="control-panel">
-        <h3>🎮 1v1 Blitz (3 րոպե)</h3>
+        <h3 data-i18n="blitzTitle">🎮 1v1 Blitz (3 րոպե)</h3>
         
         <div class="bet-selector">
-          <label style="color: #94a3b8; font-size: 13px;">Խաղադրույք (TON):</label>
+          <label style="color: #94a3b8; font-size: 13px;" data-i18n="betLabel">Խաղադրույք (TON):</label>
           <select id="betAmount">
             <option value="1">1 TON</option>
             <option value="5">5 TON</option>
@@ -156,19 +172,19 @@
           </select>
         </div>
 
-        <button id="findMatchBtn" class="btn">Գտնել Մրցակից</button>
-        <button id="cancelQueueBtn" class="btn btn-danger" style="display: none;" disabled>Չեղարկել որոնումը (30ս)</button>
+        <button id="findMatchBtn" class="btn" data-i18n="findGame">Գտնել Մրցակից</button>
+        <button id="cancelQueueBtn" class="btn btn-danger" style="display: none;" disabled data-i18n="cancelQueue">Չեղարկել հերթը</button>
         
         <div id="drawArea" style="display: none; width: 100%;">
-          <button id="offerDrawBtn" class="btn btn-warning" style="width: 100%;">🤝 Առաջարկել Ոչ-ոքի</button>
+          <button id="offerDrawBtn" class="btn btn-warning" style="width: 100%;" data-i18n="offerDraw">🤝 Առաջարկել Ոչ-ոքի</button>
         </div>
 
-        <button id="resignBtn" class="btn btn-danger" style="display: none;">🏳️ Հանձնվել</button>
+        <button id="resignBtn" class="btn btn-danger" style="display: none;" data-i18n="resign">🏳️ Հանձնվել</button>
 
-        <div id="status">Պատրաստ է որոնման</div>
+        <div id="status" data-i18n="statusReady">Պատրաստ է որոնման</div>
 
         <div style="margin-top: 5px;">
-          <label style="color: #94a3b8; font-size: 12px; font-weight: bold;">Քայլերի Պատմություն:</label>
+          <label style="color: #94a3b8; font-size: 12px; font-weight: bold;" data-i18n="movesHistory">Քայլերի Պատմություն:</label>
           <div class="move-history">
             <ol id="moveList"></ol>
           </div>
@@ -183,6 +199,189 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
 
   <script>
+    // Բազմալեզվության բառարան
+    const translations = {
+      hy: {
+        online: "Օնլայն",
+        totalUsers: "Ընդհանուր User",
+        profile: "Պրոֆիլ",
+        profileModalTitle: "👤 Խաղացողի Պրոֆիլ",
+        connectWallet: "Միացնել դրամապանակը",
+        findGame: "Գտնել Մրցակից",
+        waiting: "Սպասում ենք մրցակցին...",
+        cancelQueue: "Չեղարկել հերթը",
+        wins: "Հաղթանակներ",
+        losses: "Պարտություններ",
+        draws: "Ոչ-ոքի",
+        history: "Խաղերի պատմություն",
+        noGames: "Խաղեր դեռ չկան",
+        close: "Փակել",
+        welcomeTitle: "CryptoChess PvP",
+        welcomeDesc: "Մուտք գործեք բացառապես TON դրամապանակով և խաղացեք 3 րոպեանոց blitz շախմատ իրական խաղադրույքներով:",
+        opponent: "Մրցակից",
+        you: "Դուք",
+        blitzTitle: "🎮 1v1 Blitz (3 րոպե)",
+        betLabel: "Խաղադրույք (TON):",
+        offerDraw: "🤝 Առաջարկել Ոչ-ոքի",
+        resign: "🏳️ Հանձնվել",
+        statusReady: "Պատրաստ է որոնման",
+        movesHistory: "Քայլերի Պատմություն:",
+        drawOffer: "Մրցակիցն առաջարկում է ոչ-ոքի:",
+        accept: "Ընդունել",
+        decline: "Մերժել"
+      },
+      en: {
+        online: "Online",
+        totalUsers: "Total Users",
+        profile: "Profile",
+        profileModalTitle: "👤 Player Profile",
+        connectWallet: "Connect Wallet",
+        findGame: "Find Game",
+        waiting: "Waiting for opponent...",
+        cancelQueue: "Cancel Queue",
+        wins: "Wins",
+        losses: "Losses",
+        draws: "Draws",
+        history: "Game History",
+        noGames: "No games yet",
+        close: "Close",
+        welcomeTitle: "CryptoChess PvP",
+        welcomeDesc: "Log in with your TON wallet and play 3-minute blitz chess with real crypto stakes.",
+        opponent: "Opponent",
+        you: "You",
+        blitzTitle: "🎮 1v1 Blitz (3 min)",
+        betLabel: "Bet (TON):",
+        offerDraw: "🤝 Offer Draw",
+        resign: "🏳️ Resign",
+        statusReady: "Ready for match",
+        movesHistory: "Move History:",
+        drawOffer: "Opponent offered a draw.",
+        accept: "Accept",
+        decline: "Decline"
+      },
+      ru: {
+        online: "Онлайн",
+        totalUsers: "Всего игроков",
+        profile: "Профиль",
+        profileModalTitle: "👤 Профиль игрока",
+        connectWallet: "Подключить кошелек",
+        findGame: "Найти игру",
+        waiting: "Ожидание противника...",
+        cancelQueue: "Отменить очередь",
+        wins: "Победы",
+        losses: "Поражения",
+        draws: "Ничьи",
+        history: "История игр",
+        noGames: "Игр пока нет",
+        close: "Закрыть",
+        welcomeTitle: "CryptoChess PvP",
+        welcomeDesc: "Войдите с помощью TON кошелька и играйте в 3- минутный блиц-шахматы на реальные ставки.",
+        opponent: "Соперник",
+        you: "Вы",
+        blitzTitle: "🎮 1v1 Блиц (3 мин)",
+        betLabel: "Ставка (TON):",
+        offerDraw: "🤝 Предложить ничью",
+        resign: "🏳️ Сдаться",
+        statusReady: "Готов к поиску",
+        movesHistory: "История ходов:",
+        drawOffer: "Соперник предлагает ничью.",
+        accept: "Принять",
+        decline: "Отклонить"
+      },
+      zh: {
+        online: "在线",
+        totalUsers: "总用户",
+        profile: "个人资料",
+        profileModalTitle: "👤 玩家个人资料",
+        connectWallet: "连接钱包",
+        findGame: "寻找游戏",
+        waiting: "等待对手...",
+        cancelQueue: "取消排队",
+        wins: "胜",
+        losses: "负",
+        draws: "平",
+        history: "游戏历史",
+        noGames: "暂无游戏",
+        close: "关闭",
+        welcomeTitle: "CryptoChess PvP",
+        welcomeDesc: "使用TON钱包登录，进行真实代币下注的3分钟快棋对局。",
+        opponent: "对手",
+        you: "你",
+        blitzTitle: "🎮 1v1 快棋 (3分钟)",
+        betLabel: "下注 (TON):",
+        offerDraw: "🤝 提议和棋",
+        resign: "🏳️ 认输",
+        statusReady: "准备就绪",
+        movesHistory: "着法历史:",
+        drawOffer: "对手提议和棋。",
+        accept: "接受",
+        decline: "拒绝"
+      },
+      hi: {
+        online: "ऑनलाइन",
+        totalUsers: "कुल उपयोगकर्ता",
+        profile: "प्रोफाइल",
+        profileModalTitle: "👤 खिलाड़ी प्रोफाइल",
+        connectWallet: "वॉलेट कनेक्ट करें",
+        findGame: "गेम खोजें",
+        waiting: "प्रतिद्वंद्वी की प्रतीक्षा है...",
+        cancelQueue: "कतार रद्द करें",
+        wins: "जीत",
+        losses: "हार",
+        draws: "ड्रॉ",
+        history: "गेम इतिहास",
+        noGames: "अभी कोई गेम नहीं",
+        close: "बंद करें",
+        welcomeTitle: "CryptoChess PvP",
+        welcomeDesc: "अपने TON वॉलेट से लॉगिन करें और असली दांव के साथ 3 मिनट का ब्लिट्ज़ शतरंज खेलें।",
+        opponent: "प्रतिद्वंद्वी",
+        you: "आप",
+        blitzTitle: "🎮 1v1 ब्लिट्ज़ (3 मिनट)",
+        betLabel: "दांव (TON):",
+        offerDraw: "🤝 ड्रॉ का प्रस्ताव दें",
+        resign: "🏳️ आत्मसमर्पण",
+        statusReady: "तैयार है",
+        movesHistory: "चालों का इतिहास:",
+        drawOffer: "प्रतिद्वंद्वी ने ड्रॉ का प्रस्ताव दिया है।",
+        accept: "स्वीकार करें",
+        decline: "अस्वीकार करें"
+      }
+    };
+
+    let currentLang = localStorage.getItem('chessLang') || 'hy';
+
+    function setLanguage(lang) {
+      currentLang = lang;
+      localStorage.setItem('chessLang', lang);
+      updateTexts();
+    }
+
+    function t(key) {
+      return translations[currentLang][key] || translations['en'][key] || key;
+    }
+
+    function updateTexts() {
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (translations[currentLang][key]) {
+          el.innerText = translations[currentLang][key];
+        }
+      });
+      
+      // Ակտիվ դրոշակի նշագրում
+      document.querySelectorAll('.lang-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.getAttribute('onclick').includes(currentLang)) {
+          btn.classList.add('active');
+        }
+      });
+    }
+
+    // Էջի բեռնման ժամանակ թարմացնել լեզուն
+    window.addEventListener('DOMContentLoaded', () => {
+      setLanguage(currentLang);
+    });
+
     const socket = io(window.location.hostname === 'localhost' ? 'http://localhost:3000' : 'https://cryptochess-kxfp.onrender.com');
     let walletAddress = null;
     let board = null;
@@ -193,7 +392,6 @@
     let cancelTimer = null;
     let cancelSecondsLeft = 30;
 
-    // Ձեր իրական Treasury դրամապանակի հասցեն
     const TREASURY_WALLET = "EQCLfvbkTrdUJ1wfyNI9uOdcK30z1wbWWX060mrXBNwp2Tse"; 
 
     socket.on('statsUpdate', (data) => {
@@ -210,7 +408,7 @@
       historyList.innerHTML = '';
 
       if (data.history.length === 0) {
-        historyList.innerHTML = `<div style="text-align: center; color: #64748b; padding: 15px; font-size: 12px;">Խաղեր դեռ չկան</div>`;
+        historyList.innerHTML = `<div style="text-align: center; color: #64748b; padding: 15px; font-size: 12px;">${t('noGames')}</div>`;
         return;
       }
 
@@ -219,8 +417,8 @@
         div.className = 'history-item';
         
         let resClass = 'draw-text';
-        if (h.result === 'Հաղթանակ') resClass = 'win-text';
-        else if (h.result === 'Պարտություն') resClass = 'loss-text';
+        if (h.result === 'Հաղթանակ' || h.result === 'Win') resClass = 'win-text';
+        else if (h.result === 'Պարտություն' || h.result === 'Loss') resClass = 'loss-text';
 
         const shortOpp = h.opponent.length > 10 ? h.opponent.substring(0, 8) + '...' : h.opponent;
 
@@ -280,7 +478,6 @@
       });
     }
 
-    // «Գտնել մրցակից» սեղմելիս կատարվում է իրական TON փոխանցում դեպի ձեր հասցեն
     document.getElementById('findMatchBtn').addEventListener('click', async () => {
       const bet = parseInt(document.getElementById('betAmount').value);
       
@@ -296,7 +493,7 @@
         messages: [
           {
             address: TREASURY_WALLET,
-            amount: (bet * 1000000000).toString(), // Nanotons
+            amount: (bet * 1000000000).toString(),
             payload: "CryptoChess Entry Fee"
           }
         ]
@@ -317,7 +514,6 @@
       }
     });
 
-    // Որոնման չեղարկման կոճակ
     document.getElementById('cancelQueueBtn').addEventListener('click', () => {
       socket.emit('cancelQueue', { wallet: walletAddress });
     });
@@ -334,18 +530,18 @@
       cancelBtn.disabled = true;
       
       cancelSecondsLeft = 30;
-      cancelBtn.innerText = `Չեղարկել որոնումը (${cancelSecondsLeft}ս)`;
-      document.getElementById('status').innerText = `Որոնում ենք մրցակից... (Չեղարկումը հնարավոր կլինի 30վ հետո)`;
+      cancelBtn.innerText = `${t('cancelQueue')} (${cancelSecondsLeft}s)`;
+      document.getElementById('status').innerText = `Որոնում ենք մրցակից...`;
 
       if (cancelTimer) clearInterval(cancelTimer);
       cancelTimer = setInterval(() => {
         cancelSecondsLeft--;
         if (cancelSecondsLeft > 0) {
-          cancelBtn.innerText = `Չեղարկել որոնումը (${cancelSecondsLeft}ս)`;
+          cancelBtn.innerText = `${t('cancelQueue')} (${cancelSecondsLeft}s)`;
         } else {
           clearInterval(cancelTimer);
           cancelBtn.disabled = false;
-          cancelBtn.innerText = "Չեղարկել որոնումը";
+          cancelBtn.innerText = t('cancelQueue');
         }
       }, 1000);
     }
@@ -354,7 +550,7 @@
       if (cancelTimer) clearInterval(cancelTimer);
       document.getElementById('cancelQueueBtn').style.display = 'none';
       document.getElementById('findMatchBtn').style.display = 'block';
-      document.getElementById('status').innerText = "Պատրաստ է որոնման";
+      document.getElementById('status').innerText = t('statusReady');
     }
 
     document.getElementById('drawArea').addEventListener('click', (e) => {
@@ -392,7 +588,7 @@
       document.getElementById('resignBtn').style.display = 'block';
       document.getElementById('drawArea').style.display = 'block';
       document.getElementById('findMatchBtn').style.display = 'none';
-      document.getElementById('status').innerText = `Խաղը սկսվեց! (${playerColor === 'w' ? 'Սպիտակ' : 'Սև'})`;
+      document.getElementById('status').innerText = `Խաղը սկսվեց!`;
     });
 
     socket.on('waiting', (msg) => { document.getElementById('status').innerText = msg; });
@@ -418,11 +614,11 @@
       const drawArea = document.getElementById('drawArea');
       drawArea.innerHTML = `
         <div class="draw-container">
-          <button id="acceptDrawBtn" class="btn btn-success">✔ Այո</button>
-          <button id="declineDrawBtn" class="btn btn-danger">✖ Ոչ</button>
+          <button id="acceptDrawBtn" class="btn btn-success">✔ ${t('accept')}</button>
+          <button id="declineDrawBtn" class="btn btn-danger">✖ ${t('decline')}</button>
         </div>
       `;
-      document.getElementById('status').innerText = "⚠️ Մրցակիցն առաջարկում է ոչ-ոքի:";
+      document.getElementById('status').innerText = `⚠️ ${t('drawOffer')}`;
     });
 
     socket.on('drawDeclined', () => {
@@ -435,7 +631,7 @@
 
     function resetDrawUI() {
       const drawArea = document.getElementById('drawArea');
-      drawArea.innerHTML = `<button id="offerDrawBtn" class="btn btn-warning" style="width: 100%;">🤝 Առաջարկել Ոչ-ոքի</button>`;
+      drawArea.innerHTML = `<button id="offerDrawBtn" class="btn btn-warning" style="width: 100%;">${t('offerDraw')}</button>`;
     }
 
     socket.on('timeUpdate', (time) => {
@@ -455,15 +651,7 @@
       document.getElementById('drawArea').style.display = 'none';
       document.getElementById('findMatchBtn').style.display = 'block';
 
-      if (data.result === 'checkmate') {
-        banner.innerHTML = `🏆 ՄԱՏ: Հաղթեց՝ <b>${winnerDisplay}</b><br>Մրցանակ՝ <b>${data.payout} TON</b>`;
-      } else if (data.result === 'timeout') {
-        banner.innerHTML = `⏰ ԺԱՄԱՆԱԿՆ ԱՎԱՐՏՎԵՑ: Հաղթեց՝ <b>${winnerDisplay}</b><br>Մրցանակ՝ <b>${data.payout} TON</b>`;
-      } else if (data.result === 'resign') {
-        banner.innerHTML = `🏳️ ՀԱՆՁՆՎԵՑ: Հաղթեց՝ <b>${winnerDisplay}</b><br>Մրցանակ՝ <b>${data.payout} TON</b>`;
-      } else {
-        banner.innerHTML = `🤝 ՈՉ-ՈՔԻ: Խաղադրույքը (${data.payout} TON) վերադարձվեց երկու խաղացողներին:`;
-      }
+      banner.innerHTML = `🏁 Խաղն ավարտվեց! Մրցանակ՝ <b>${data.payout} TON</b>`;
       document.getElementById('status').innerText = "Խաղն ավարտվեց:";
 
       socket.emit('registerUser', { wallet: walletAddress });
