@@ -13,11 +13,13 @@ const io = new Server(server);
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 
-// TON Connect-ի մանիֆեստի ուղղակի վերադարձ սերվերից (բացառում է Not Found սխալը)
 app.get('/tonconnect-manifest.json', (req, res) => {
   res.json({
     "url": "https://cryptochess-kxfp.onrender.com",
-    "name": "CryptoChess Blitz"
+    "name": "CryptoChess Blitz",
+    "iconUrl": "https://cryptochess-kxfp.onrender.com/icon.png",
+    "termsOfUseUrl": "https://cryptochess-kxfp.onrender.com",
+    "privacyPolicyUrl": "https://cryptochess-kxfp.onrender.com"
   });
 });
 const db = new sqlite3.Database('./cryptochess.db', (err) => {
