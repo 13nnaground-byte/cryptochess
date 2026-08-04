@@ -3,13 +3,20 @@ const http = require('http');
 const { Server } = require('socket.io');
 const { Chess } = require('chess.js');
 const sqlite3 = require('sqlite3').verbose();
+const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-app.use(express.static('public'));
+// Ստատիկ ֆայլերի տրամադրում public թղթապանակից
+app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
+
+// Հավելյալ ապահովում TON Connect-ի մանիֆեստի համար, եթե այն հենց արմատային տղթապանակում է
+app.get('/tonconnect-manifest.json', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'tonconnect-manifest.json'));
+});
 
 const db = new sqlite3.Database('./cryptochess.db', (err) => {
   if (err) console.error('DB Error:', err.message);
