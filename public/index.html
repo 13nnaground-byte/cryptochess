@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="hy">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CryptoChess TON - Web3 Chess</title>
+  
+  <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
+  <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+    body { background-color: #0b0e14; color: #f0f6fc; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 20px; }
+    
+    header { width: 100%; max-width: 1000px; display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #1f293d; margin-bottom: 25px; }
+    .logo { font-size: 24px; font-weight: 800; color: #0088cc; }
+    
+    .global-stats { display: flex; gap: 15px; font-size: 13px; color: #94a3b8; background: #131b2e; padding: 6px 12px; border-radius: 8px; border: 1px solid #1f293d; }
+    .stat-item span { color: #38bdf8; font-weight: bold; }
+
+    .header-right { display: flex; align-items: center; gap: 15px; }
+    .btn-profile { background: #1e293b; color: #38bdf8; border: 1px solid #334155; padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; display: none; }
+    .btn-profile:hover { background: #334155; }
+
+    #welcome-screen { width: 100%; max-width: 550px; text-align: center; background: #131b2e; border: 1px solid #1f293d; border-radius: 16px; padding: 35px 25px; margin-top: 20px; }
+    #welcome-screen h2 { font-size: 26px; margin-bottom: 12px; color: #ffffff; }
+    #welcome-screen p { font-size: 14px; color: #94a3b8; line-height: 1.5; margin-bottom: 20px; }
+
+    .btn-test { background: #38bdf8; color: #0f172a; border: none; padding: 10px 18px; font-size: 14px; font-weight: 700; border-radius: 8px; cursor: pointer; margin-top: 15px; }
+    .btn-test:hover { background: #7dd3fc; }
+
+    #game-screen { display: none; width: 100%; max-width: 1000px; flex-direction: column; align-items: center; }
+    .game-layout { display: flex; flex-wrap: wrap; gap: 30px; justify-content: center; width: 100%; margin-top: 10px; }
+    
+    .control-panel { background: #131b2e; border: 1px solid #1f293d; padding: 20px; border-radius: 16px; width: 100%; max-width: 320px; display: flex; flex-direction: column; gap: 12px; }
+    .bet-selector select { width: 100%; padding: 10px; border-radius: 8px; background: #1a243b; color: white; border: 1px solid #283754; font-size: 15px; outline: none; margin-top: 5px; }
+    
+    .btn { background: #0284c7; color: white; border: none; padding: 12px 18px; font-size: 15px; font-weight: 600; border-radius: 8px; cursor: pointer; }
+    .btn:hover { background: #0369a1; }
+    .btn-warning { background: #f59e0b; color: #0f172a; font-weight: 700; } 
+    .btn-success { background: #16a34a; color: white; font-weight: 700; } 
+    .btn-danger { background: #ef4444; color: white; font-weight: 700; } 
+    
+    .draw-container { display: flex; gap: 5px; width: 100%; }
+    .draw-container button { flex: 1; padding: 12px 10px; font-size: 14px; border-radius: 8px; border: none; cursor: pointer; }
+
+    #status { padding: 10px; border-radius: 8px; background: #1a243b; color: #f59e0b; font-size: 13px; text-align: center; font-weight: 600; border: 1px solid #283754; }
+    #winner-banner { display: none; width: 100%; max-width: 900px; background: #16a34a; color: white; padding: 15px; border-radius: 12px; font-size: 18px; font-weight: bold; text-align: center; margin-bottom: 15px; }
+
+    .timer-box { display: flex; justify-content: space-between; background: #1a243b; padding: 10px 15px; border-radius: 8px; font-size: 16px; font-weight: bold; border: 1px solid #283754; }
+    .move-history { background: #1a243b; border: 1px solid #283754; border-radius: 8px; height: 140px; overflow-y: auto; padding: 10px; font-size: 13px; color: #cbd5e1; }
+
+    /* Modal (Պրոֆիլի պատուհան) */
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); justify-content: center; align-items: center; z-index: 1000; }
+    .modal-content { background: #131b2e; border: 1px solid #1f293d; padding: 25px; border-radius: 16px; width: 100%; max-width: 480px; text-align: center; position: relative; max-height: 85vh; display: flex; flex-direction: column; }
+    .modal-content h3 { margin-bottom: 10px; color: #fff; }
+    .modal-stats { display: flex; justify-content: space-around; background: #1a243b; padding: 12px; border-radius: 10px; margin: 10px 0; border: 1px solid #283754; }
+    .modal-stats div b { display: block; font-size: 16px; color: #38bdf8; margin-top: 3px; }
+
+    .history-container { margin-top: 10px; max-height: 200px; overflow-y: auto; border: 1px solid #283754; border-radius: 8px; background: #1a243b; text-align: left; padding: 8px; }
+    .history-item { font-size: 12px; padding: 6px; border-bottom: 1px solid #283754; display: flex; justify-content: space-between; align-items: center; }
+    .history-item:last-child { border-bottom: none; }
+    .win-text { color: #22c55e; font-weight: bold; }
+    .loss-text { color: #ef4444; font-weight: bold; }
+    .draw-text { color: #f59e0b; font-weight: bold; }
+
+    .close-modal { background: #ef4444; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 15px; }
+
+    #board-container { display: flex; flex-direction: column; align-items: center; }
+    .board-row { display: flex; align-items: center; }
+    #board { width: 380px; border-radius: 8px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.6); }
+    .numbers-column { display: flex; flex-direction: column; justify-content: space-around; height: 380px; padding-left: 10px; font-weight: bold; color: #64748b; }
+    .letters-row { display: flex; justify-content: space-around; width: 380px; padding-top: 8px; font-weight: bold; color: #64748b; }
+    .alpha-d2270, .numeric-fc326 { display: none !important; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo">♟️ CryptoChess TON</div>
+    
+    <div class="global-stats">
+      <div class="stat-item">🟢 Օնլայն՝ <span id="onlineCount">0</span></div>
+      <div class="stat-item">👥 Ընդհանուր User՝ <span id="totalUsersCount">0</span></div>
+    </div>
+
+    <div class="header-right">
+      <button id="openProfileBtn" class="btn-profile">👤 Իմ Պրոֆիլը</button>
+      <div id="ton-connect-header"></div>
+    </div>
+  </header>
+
+  <!-- 👤 Պրոֆիլի Մոդալ Պատուհան -->
+  <div id="profileModal" class="modal-overlay">
+    <div class="modal-content">
+      <h3>👤 Խաղացողի Պրոֆիլ</h3>
+      <p style="font-size: 11px; color: #94a3b8; word-break: break-all;" id="modalWallet">Հասցե: -</p>
+      
+      <div class="modal-stats">
+        <div>Հաղթ.<b id="statWins">0</b></div>
+        <div>Պարտ.<b id="statLosses">0</b></div>
+        <div>Ոչ-ոքի<b id="statDraws">0</b></div>
+      </div>
+
+      <label style="font-size: 12px; font-weight: bold; color: #94a3b8; margin-top: 5px;">Վերջին Խաղերի Պատմություն:</label>
+      <div class="history-container" id="historyList">
+        <div style="text-align: center; color: #64748b; padding: 15px; font-size: 12px;">Խաղեր դեռ չկան</div>
+      </div>
+
+      <button class="close-modal" id="closeModalBtn">Փակել</button>
+    </div>
+  </div>
+
+  <div id="welcome-screen">
+    <h2>CryptoChess PvP</h2>
+    <p>Խաղացեք 3 րոպեանոց blitz շախմատ TON խաղադրույքներով:</p>
+
+    <div id="ton-connect-landing"></div>
+
+    <div style="margin-top: 20px; border-top: 1px dashed #283754; padding-top: 15px;">
+      <p style="font-size: 12px; color: #64748b;">Լոկալ թեստավորման համար՝</p>
+      <button class="btn-test" id="fastTestBtn">⚡ Արագ Մուտք (Local Test)</button>
+    </div>
+  </div>
+
+  <div id="game-screen">
+    <div id="winner-banner"></div>
+
+    <div class="game-layout">
+      <div id="board-container">
+        <div class="timer-box" id="opponentTimeBox" style="width: 380px; margin-bottom: 8px;">
+          <span>Մրցակից</span>
+          <span id="opponentClock">03:00</span>
+        </div>
+
+        <div class="board-row">
+          <div id="board"></div>
+          <div class="numbers-column" id="numbersCol">
+            <span>8</span><span>7</span><span>6</span><span>5</span><span>4</span><span>3</span><span>2</span><span>1</span>
+          </div>
+        </div>
+        <div class="letters-row" id="lettersRow">
+          <span>a</span><span>b</span><span>c</span><span>d</span><span>e</span><span>f</span><span>g</span><span>h</span>
+        </div>
+
+        <div class="timer-box" id="myTimeBox" style="width: 380px; margin-top: 8px;">
+          <span>Դուք</span>
+          <span id="myClock">03:00</span>
+        </div>
+      </div>
+
+      <div class="control-panel">
+        <h3>🎮 1v1 Blitz (3 րոպե)</h3>
+        
+        <div class="bet-selector">
+          <label style="color: #94a3b8; font-size: 13px;">Խաղադրույք (TON):</label>
+          <select id="betAmount">
+            <option value="1">1 TON</option>
+            <option value="5">5 TON</option>
+            <option value="10">10 TON</option>
+          </select>
+        </div>
+
+        <button id="findMatchBtn" class="btn">Գտնել Մրցակից</button>
+        
+        <div id="drawArea" style="display: none; width: 100%;">
+          <button id="offerDrawBtn" class="btn btn-warning" style="width: 100%;">🤝 Առաջարկել Ոչ-ոքի</button>
+        </div>
+
+        <button id="resignBtn" class="btn btn-danger" style="display: none;">🏳️ Հանձնվել</button>
+
+        <div id="status">Պատրաստ է որոնման</div>
+
+        <div style="margin-top: 5px;">
+          <label style="color: #94a3b8; font-size: 12px; font-weight: bold;">Քայլերի Պատմություն:</label>
+          <div class="move-history">
+            <ol id="moveList"></ol>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+  <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+
+  <script>
+    const socket = io();
+    let walletAddress = null;
+    let board = null;
+    let game = new Chess();
+    let playerColor = null;
+    let currentGameId = null;
+
+    socket.on('statsUpdate', (data) => {
+      document.getElementById('onlineCount').innerText = data.online;
+      document.getElementById('totalUsersCount').innerText = data.totalUsers;
+    });
+
+    socket.on('userStats', (data) => {
+      // Ընդհանուր վիճակագրություն
+      document.getElementById('statWins').innerText = data.user.wins;
+      document.getElementById('statLosses').innerText = data.user.losses;
+      document.getElementById('statDraws').innerText = data.user.draws;
+
+      // Խաղերի պատմություն
+      const historyList = document.getElementById('historyList');
+      historyList.innerHTML = '';
+
+      if (data.history.length === 0) {
+        historyList.innerHTML = `<div style="text-align: center; color: #64748b; padding: 15px; font-size: 12px;">Խաղեր դեռ չկան</div>`;
+        return;
+      }
+
+      data.history.forEach(h => {
+        const div = document.createElement('div');
+        div.className = 'history-item';
+        
+        let resClass = 'draw-text';
+        if (h.result === 'Հաղթանակ') resClass = 'win-text';
+        else if (h.result === 'Պարտություն') resClass = 'loss-text';
+
+        const shortOpp = h.opponent.length > 10 ? h.opponent.substring(0, 8) + '...' : h.opponent;
+
+        div.innerHTML = `
+          <div>
+            <span class="${resClass}">${h.result}</span> <span style="color: #94a3b8; font-size: 11px;">(${h.bet} TON)</span><br>
+            <span style="color: #64748b; font-size: 10px;">Մրցակից՝ ${shortOpp}</span>
+          </div>
+          <div style="text-align: right; font-weight: bold; color: #38bdf8; font-size: 12px;">
+            ${h.payout}
+          </div>
+        `;
+        historyList.appendChild(div);
+      });
+    });
+
+    document.getElementById('openProfileBtn').addEventListener('click', () => {
+      document.getElementById('profileModal').style.display = 'flex';
+    });
+    document.getElementById('closeModalBtn').addEventListener('click', () => {
+      document.getElementById('profileModal').style.display = 'none';
+    });
+
+    const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
+        manifestUrl: 'https://raw.githubusercontent.com/ton-community/tutorials/main/03-client/test-manifest.json',
+        buttonRootId: 'ton-connect-landing'
+    });
+
+    tonConnectUI.onStatusChange(wallet => {
+        if (wallet) {
+            walletAddress = wallet.account.address;
+            registerAndShowGame();
+        }
+    });
+
+    document.getElementById('fastTestBtn').addEventListener('click', () => {
+      walletAddress = "TEST_" + Math.floor(1000 + Math.random() * 9000);
+      registerAndShowGame();
+    });
+
+    function registerAndShowGame() {
+      socket.emit('registerUser', { wallet: walletAddress });
+      showGameScreen();
+    }
+
+    function showGameScreen() {
+      document.getElementById('welcome-screen').style.display = 'none';
+      document.getElementById('game-screen').style.display = 'flex';
+      document.getElementById('openProfileBtn').style.display = 'block';
+      document.getElementById('modalWallet').innerText = "Հասցե: " + walletAddress;
+      if (!board) initBoard();
+    }
+
+    function initBoard() {
+      board = Chessboard('board', {
+        draggable: true,
+        position: 'start',
+        showNotation: false,
+        pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png',
+        onDragStart: onDragStart,
+        onDrop: onDrop
+      });
+    }
+
+    document.getElementById('findMatchBtn').addEventListener('click', () => {
+      const bet = parseInt(document.getElementById('betAmount').value);
+      document.getElementById('winner-banner').style.display = 'none';
+      document.getElementById('status').innerText = `Որոնում ենք մրցակից (${bet} TON)...`;
+      document.getElementById('moveList').innerHTML = '';
+      socket.emit('findMatch', { wallet: walletAddress, bet: bet });
+    });
+
+    document.getElementById('drawArea').addEventListener('click', (e) => {
+      if (e.target.id === 'offerDrawBtn') {
+        if (currentGameId) socket.emit('offerDraw', { gameId: currentGameId });
+      } else if (e.target.id === 'acceptDrawBtn') {
+        if (currentGameId) socket.emit('respondDraw', { gameId: currentGameId, accepted: true });
+      } else if (e.target.id === 'declineDrawBtn') {
+        if (currentGameId) socket.emit('respondDraw', { gameId: currentGameId, accepted: false });
+      }
+    });
+
+    document.getElementById('resignBtn').addEventListener('click', () => {
+      if (currentGameId && confirm("Վստա՞հ եք, որ ուզում եք հանձնվել:")) {
+        socket.emit('resign', { gameId: currentGameId });
+      }
+    });
+
+    socket.on('gameStart', (data) => {
+      currentGameId = data.gameId;
+      playerColor = data.color;
+      game.reset();
+      board.orientation(playerColor === 'w' ? 'white' : 'black');
+      board.start();
+      updateCoordinates(playerColor);
+
+      document.getElementById('myClock').innerText = "03:00";
+      document.getElementById('opponentClock').innerText = "03:00";
+
+      resetDrawUI();
+      document.getElementById('winner-banner').style.display = 'none';
+      document.getElementById('resignBtn').style.display = 'block';
+      document.getElementById('drawArea').style.display = 'block';
+      document.getElementById('findMatchBtn').style.display = 'none';
+      document.getElementById('status').innerText = `Խաղը սկսվեց! (${playerColor === 'w' ? 'Սպիտակ' : 'Սև'})`;
+    });
+
+    socket.on('waiting', (msg) => { document.getElementById('status').innerText = msg; });
+
+    socket.on('moveMade', (data) => {
+      game.move(data.move);
+      board.position(game.fen());
+
+      const li = document.createElement('li');
+      li.innerText = data.san;
+      document.getElementById('moveList').appendChild(li);
+      const historyBox = document.querySelector('.move-history');
+      historyBox.scrollTop = historyBox.scrollHeight;
+    });
+
+    socket.on('drawSent', () => {
+      const drawArea = document.getElementById('drawArea');
+      drawArea.innerHTML = `<button class="btn btn-warning" style="width: 100%; cursor: default;" disabled>⏳ Առաջարկն ուղարկված է</button>`;
+      document.getElementById('status').innerText = "Ոչ-ոքիի առաջարկն ուղարկված է մրցակցին...";
+    });
+
+    socket.on('drawOffered', () => {
+      const drawArea = document.getElementById('drawArea');
+      drawArea.innerHTML = `
+        <div class="draw-container">
+          <button id="acceptDrawBtn" class="btn btn-success">✔ Այո</button>
+          <button id="declineDrawBtn" class="btn btn-danger">✖ Ոչ</button>
+        </div>
+      `;
+      document.getElementById('status').innerText = "⚠️ Մրցակիցն առաջարկում է ոչ-ոքի:";
+    });
+
+    socket.on('drawDeclined', () => {
+      document.getElementById('status').innerText = "Մրցակիցը մերժեց ոչ-ոքիի առաջարկը:";
+    });
+
+    socket.on('resetDrawUI', () => {
+      resetDrawUI();
+    });
+
+    function resetDrawUI() {
+      const drawArea = document.getElementById('drawArea');
+      drawArea.innerHTML = `<button id="offerDrawBtn" class="btn btn-warning" style="width: 100%;">🤝 Առաջարկել Ոչ-ոքի</button>`;
+    }
+
+    socket.on('timeUpdate', (time) => {
+      if (!playerColor) return;
+      const myTime = playerColor === 'w' ? time.w : time.b;
+      const oppTime = playerColor === 'w' ? time.b : time.w;
+      document.getElementById('myClock').innerText = formatTime(myTime);
+      document.getElementById('opponentClock').innerText = formatTime(oppTime);
+    });
+
+    socket.on('gameOver', (data) => {
+      const banner = document.getElementById('winner-banner');
+      banner.style.display = 'block';
+      const winnerDisplay = data.winner ? data.winner : 'Անհայտ';
+
+      document.getElementById('resignBtn').style.display = 'none';
+      document.getElementById('drawArea').style.display = 'none';
+      document.getElementById('findMatchBtn').style.display = 'block';
+
+      if (data.result === 'checkmate') {
+        banner.innerHTML = `🏆 ՄԱՏ: Հաղթեց՝ <b>${winnerDisplay}</b><br>Մրցանակ՝ <b>${data.payout} TON</b>`;
+      } else if (data.result === 'timeout') {
+        banner.innerHTML = `⏰ ԺԱՄԱՆԱԿՆ ԱՎԱՐՏՎԵՑ: Հաղթեց՝ <b>${winnerDisplay}</b><br>Մրցանակ՝ <b>${data.payout} TON</b>`;
+      } else if (data.result === 'resign') {
+        banner.innerHTML = `🏳️ ՀԱՆՁՆՎԵՑ: Հաղթեց՝ <b>${winnerDisplay}</b><br>Մրցանակ՝ <b>${data.payout} TON</b>`;
+      } else {
+        banner.innerHTML = `🤝 ՈՉ-ՈՔԻ: Խաղադրույքը (${data.payout} TON) վերադարձվեց երկու խաղացողներին:`;
+      }
+      document.getElementById('status').innerText = "Խաղն ավարտվեց:";
+
+      socket.emit('registerUser', { wallet: walletAddress });
+    });
+
+    function formatTime(seconds) {
+      if (seconds < 0) seconds = 0;
+      const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+      const s = (seconds % 60).toString().padStart(2, '0');
+      return `${m}:${s}`;
+    }
+
+    function updateCoordinates(color) {
+      const numCol = document.getElementById('numbersCol');
+      const letRow = document.getElementById('lettersRow');
+      if (color === 'b') {
+        numCol.innerHTML = '<span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span>';
+        letRow.innerHTML = '<span>h</span><span>g</span><span>f</span><span>e</span><span>d</span><span>c</span><span>b</span><span>a</span>';
+      } else {
+        numCol.innerHTML = '<span>8</span><span>7</span><span>6</span><span>5</span><span>4</span><span>3</span><span>2</span><span>1</span>';
+        letRow.innerHTML = '<span>a</span><span>b</span><span>c</span><span>d</span><span>e</span><span>f</span><span>g</span><span>h</span>';
+      }
+    }
+
+    function onDragStart (source, piece) {
+      if (game.game_over()) return false;
+      if ((playerCardColor === 'w' && piece.search(/^b/) !== -1) ||
+          (playerColor === 'b' && piece.search(/^w/) !== -1)) return false;
+      if ((game.turn() === 'w' && playerColor !== 'w') ||
+          (game.turn() === 'b' && playerColor !== 'b')) return false;
+    }
+
+    function onDrop (source, target) {
+      const move = game.move({ from: source, to: target, promotion: 'q' });
+      if (move === null) return 'snapback';
+      socket.emit('makeMove', { gameId: currentGameId, move: { from: source, to: target, promotion: 'q' } });
+    }
+  </script>
+</body>
+</html>
