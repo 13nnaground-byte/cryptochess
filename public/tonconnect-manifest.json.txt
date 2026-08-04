@@ -1,5 +1,5 @@
 {
-  "url": "https://cryptochess.onrender.com",
+  "url": "https://cryptochess-kxfp.onrender.com",
   "name": "CryptoChess Blitz",
-  "iconUrl": "https://cryptochess.onrender.com/icon.png"
+  "iconUrl": "https://cryptochess-kxfp.onrender.com/icon.png"
 }
