@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="hy">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -21,9 +21,8 @@
 
     .header-right { display: flex; align-items: center; gap: 12px; }
     
-    /* Լեզուների ընտրության ոճեր */
     .lang-selector { display: flex; gap: 5px; background: #131b2e; padding: 4px; border-radius: 8px; border: 1px solid #1f293d; }
-    .lang-btn { background: transparent; border: none; cursor: pointer; font-size: 16px; padding: 4px 6px; border-radius: 6px; transition: 0.2s; }
+    .lang-btn { background: transparent; border: none; cursor: pointer; font-size: 16px; padding: 4px 8px; border-radius: 6px; transition: 0.2s; display: flex; align-items: center; justify-content: center; }
     .lang-btn:hover { background: #1e293b; }
     .lang-btn.active { background: #0284c7; }
 
@@ -58,7 +57,6 @@
     .timer-box { display: flex; justify-content: space-between; background: #1a243b; padding: 10px 15px; border-radius: 8px; font-size: 16px; font-weight: bold; border: 1px solid #283754; }
     .move-history { background: #1a243b; border: 1px solid #283754; border-radius: 8px; height: 140px; overflow-y: auto; padding: 10px; font-size: 13px; color: #cbd5e1; }
 
-    /* Modal (Պրոֆիլի պատուհան) */
     .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); justify-content: center; align-items: center; z-index: 1000; }
     .modal-content { background: #131b2e; border: 1px solid #1f293d; padding: 25px; border-radius: 16px; width: 100%; max-width: 480px; text-align: center; position: relative; max-height: 85vh; display: flex; flex-direction: column; }
     .modal-content h3 { margin-bottom: 10px; color: #fff; }
@@ -72,7 +70,12 @@
     .loss-text { color: #ef4444; font-weight: bold; }
     .draw-text { color: #f59e0b; font-weight: bold; }
 
-    .close-modal { background: #ef4444; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 15px; }
+    .modal-actions { display: flex; gap: 10px; margin-top: 15px; }
+    .modal-actions button { flex: 1; padding: 10px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; font-size: 13px; }
+    .btn-logout { background: #ef4444; color: white; }
+    .btn-logout:hover { background: #dc2626; }
+    .close-modal { background: #334155; color: white; }
+    .close-modal:hover { background: #475569; }
 
     #board-container { display: flex; flex-direction: column; align-items: center; }
     .board-row { display: flex; align-items: center; }
@@ -88,48 +91,50 @@
     <div class="logo">♟️ CryptoChess TON</div>
     
     <div class="global-stats">
-      <div class="stat-item">🟢 <span data-i18n="online">Օնլայն</span>՝ <span id="onlineCount">0</span></div>
-      <div class="stat-item">👥 <span data-i18n="totalUsers">Ընդհանուր User</span>՝ <span id="totalUsersCount">0</span></div>
+      <div class="stat-item">🟢 <span data-i18n="online">Online</span>՝ <span id="onlineCount">0</span></div>
+      <div class="stat-item">👥 <span data-i18n="totalUsers">Total Users</span>՝ <span id="totalUsersCount">0</span></div>
     </div>
 
     <div class="header-right">
-      <!-- Լեզուների Ընտրության Կոճակներ -->
+      <!-- 🇺🇸 Անգլերենը առաջինը, հետո ռուսերեն, հայերեն և այլն -->
       <div class="lang-selector">
-        <button class="lang-btn" onclick="setLanguage('hy')" title="Հայերեն">🇦🇲</button>
-        <button class="lang-btn" onclick="setLanguage('en')" title="English">🇬🇧</button>
+        <button class="lang-btn" onclick="setLanguage('en')" title="English">🇺🇸</button>
         <button class="lang-btn" onclick="setLanguage('ru')" title="Русский">🇷🇺</button>
+        <button class="lang-btn" onclick="setLanguage('hy')" title="Հայերեն">🇦🇲</button>
         <button class="lang-btn" onclick="setLanguage('zh')" title="中文">🇨🇳</button>
         <button class="lang-btn" onclick="setLanguage('hi')" title="हिन्दी">🇮🇳</button>
       </div>
 
-      <button id="openProfileBtn" class="btn-profile">👤 <span data-i18n="profile">Իմ Պրոֆիլը</span></button>
+      <button id="openProfileBtn" class="btn-profile">👤 <span data-i18n="profile">Profile</span></button>
     </div>
   </header>
 
-  <!-- 👤 Պրոֆիլի Մոդալ Պատուհան -->
   <div id="profileModal" class="modal-overlay">
     <div class="modal-content">
-      <h3 data-i18n="profileModalTitle">👤 Խաղացողի Պրոֆիլ</h3>
-      <p style="font-size: 11px; color: #94a3b8; word-break: break-all;" id="modalWallet">Հասցե: -</p>
+      <h3 data-i18n="profileModalTitle">👤 Player Profile</h3>
+      <p style="font-size: 11px; color: #94a3b8; word-break: break-all;" id="modalWallet">Address: -</p>
       
       <div class="modal-stats">
-        <div><span data-i18n="wins">Հաղթանակներ</span><b id="statWins">0</b></div>
-        <div><span data-i18n="losses">Պարտություններ</span><b id="statLosses">0</b></div>
-        <div><span data-i18n="draws">Ոչ-ոքի</span><b id="statDraws">0</b></div>
+        <div><span data-i18n="wins">Wins</span><b id="statWins">0</b></div>
+        <div><span data-i18n="losses">Losses</span><b id="statLosses">0</b></div>
+        <div><span data-i18n="draws">Draws</span><b id="statDraws">0</b></div>
       </div>
 
-      <label style="font-size: 12px; font-weight: bold; color: #94a3b8; margin-top: 5px;" data-i18n="history">Խաղերի պատմություն:</label>
+      <label style="font-size: 12px; font-weight: bold; color: #94a3b8; margin-top: 5px;" data-i18n="history">Game History:</label>
       <div class="history-container" id="historyList">
-        <div style="text-align: center; color: #64748b; padding: 15px; font-size: 12px;" data-i18n="noGames">Խաղեր դեռ չկան</div>
+        <div style="text-align: center; color: #64748b; padding: 15px; font-size: 12px;" data-i18n="noGames">No games yet</div>
       </div>
 
-      <button class="close-modal" id="closeModalBtn" data-i18n="close">Փակել</button>
+      <div class="modal-actions">
+        <button class="btn-logout" id="logoutBtn" data-i18n="logout">🚪 Disconnect</button>
+        <button class="close-modal" id="closeModalBtn" data-i18n="close">Close</button>
+      </div>
     </div>
   </div>
 
   <div id="welcome-screen">
     <h2 data-i18n="welcomeTitle">CryptoChess PvP</h2>
-    <p data-i18n="welcomeDesc">Մուտք գործեք բացառապես TON դրամապանակով և խաղացեք 3 րոպեանոց blitz շախմատ իրական խաղադրույքներով:</p>
+    <p data-i18n="welcomeDesc">Log in with your TON wallet and play 3-minute blitz chess with real crypto stakes.</p>
 
     <div class="ton-login-btn-container" id="ton-connect-landing"></div>
   </div>
@@ -140,7 +145,7 @@
     <div class="game-layout">
       <div id="board-container">
         <div class="timer-box" id="opponentTimeBox" style="width: 380px; margin-bottom: 8px;">
-          <span data-i18n="opponent">Մրցակից</span>
+          <span data-i18n="opponent">Opponent</span>
           <span id="opponentClock">03:00</span>
         </div>
 
@@ -155,16 +160,16 @@
         </div>
 
         <div class="timer-box" id="myTimeBox" style="width: 380px; margin-top: 8px;">
-          <span data-i18n="you">Դուք</span>
+          <span data-i18n="you">You</span>
           <span id="myClock">03:00</span>
         </div>
       </div>
 
       <div class="control-panel">
-        <h3 data-i18n="blitzTitle">🎮 1v1 Blitz (3 րոպե)</h3>
+        <h3 data-i18n="blitzTitle">🎮 1v1 Blitz (3 min)</h3>
         
         <div class="bet-selector">
-          <label style="color: #94a3b8; font-size: 13px;" data-i18n="betLabel">Խաղադրույք (TON):</label>
+          <label style="color: #94a3b8; font-size: 13px;" data-i18n="betLabel">Bet (TON):</label>
           <select id="betAmount">
             <option value="1">1 TON</option>
             <option value="5">5 TON</option>
@@ -172,19 +177,19 @@
           </select>
         </div>
 
-        <button id="findMatchBtn" class="btn" data-i18n="findGame">Գտնել Մրցակից</button>
-        <button id="cancelQueueBtn" class="btn btn-danger" style="display: none;" disabled data-i18n="cancelQueue">Չեղարկել հերթը</button>
+        <button id="findMatchBtn" class="btn" data-i18n="findGame">Find Game</button>
+        <button id="cancelQueueBtn" class="btn btn-danger" style="display: none;" disabled data-i18n="cancelQueue">Cancel Queue</button>
         
         <div id="drawArea" style="display: none; width: 100%;">
-          <button id="offerDrawBtn" class="btn btn-warning" style="width: 100%;" data-i18n="offerDraw">🤝 Առաջարկել Ոչ-ոքի</button>
+          <button id="offerDrawBtn" class="btn btn-warning" style="width: 100%;" data-i18n="offerDraw">🤝 Offer Draw</button>
         </div>
 
-        <button id="resignBtn" class="btn btn-danger" style="display: none;" data-i18n="resign">🏳️ Հանձնվել</button>
+        <button id="resignBtn" class="btn btn-danger" style="display: none;" data-i18n="resign">🏳️ Resign</button>
 
-        <div id="status" data-i18n="statusReady">Պատրաստ է որոնման</div>
+        <div id="status" data-i18n="statusReady">Ready for match</div>
 
         <div style="margin-top: 5px;">
-          <label style="color: #94a3b8; font-size: 12px; font-weight: bold;" data-i18n="movesHistory">Քայլերի Պատմություն:</label>
+          <label style="color: #94a3b8; font-size: 12px; font-weight: bold;" data-i18n="movesHistory">Move History:</label>
           <div class="move-history">
             <ol id="moveList"></ol>
           </div>
@@ -199,43 +204,13 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
 
   <script>
-    // Բազմալեզվության բառարան
     const translations = {
-      hy: {
-        online: "Օնլայն",
-        totalUsers: "Ընդհանուր User",
-        profile: "Պրոֆիլ",
-        profileModalTitle: "👤 Խաղացողի Պրոֆիլ",
-        connectWallet: "Միացնել դրամապանակը",
-        findGame: "Գտնել Մրցակից",
-        waiting: "Սպասում ենք մրցակցին...",
-        cancelQueue: "Չեղարկել հերթը",
-        wins: "Հաղթանակներ",
-        losses: "Պարտություններ",
-        draws: "Ոչ-ոքի",
-        history: "Խաղերի պատմություն",
-        noGames: "Խաղեր դեռ չկան",
-        close: "Փակել",
-        welcomeTitle: "CryptoChess PvP",
-        welcomeDesc: "Մուտք գործեք բացառապես TON դրամապանակով և խաղացեք 3 րոպեանոց blitz շախմատ իրական խաղադրույքներով:",
-        opponent: "Մրցակից",
-        you: "Դուք",
-        blitzTitle: "🎮 1v1 Blitz (3 րոպե)",
-        betLabel: "Խաղադրույք (TON):",
-        offerDraw: "🤝 Առաջարկել Ոչ-ոքի",
-        resign: "🏳️ Հանձնվել",
-        statusReady: "Պատրաստ է որոնման",
-        movesHistory: "Քայլերի Պատմություն:",
-        drawOffer: "Մրցակիցն առաջարկում է ոչ-ոքի:",
-        accept: "Ընդունել",
-        decline: "Մերժել"
-      },
       en: {
         online: "Online",
         totalUsers: "Total Users",
         profile: "Profile",
         profileModalTitle: "👤 Player Profile",
-        connectWallet: "Connect Wallet",
+        logout: "🚪 Disconnect",
         findGame: "Find Game",
         waiting: "Waiting for opponent...",
         cancelQueue: "Cancel Queue",
@@ -264,7 +239,7 @@
         totalUsers: "Всего игроков",
         profile: "Профиль",
         profileModalTitle: "👤 Профиль игрока",
-        connectWallet: "Подключить кошелек",
+        logout: "🚪 Выйти",
         findGame: "Найти игру",
         waiting: "Ожидание противника...",
         cancelQueue: "Отменить очередь",
@@ -288,12 +263,41 @@
         accept: "Принять",
         decline: "Отклонить"
       },
+      hy: {
+        online: "Օնլայն",
+        totalUsers: "Ընդհանուր User",
+        profile: "Պրոֆիլ",
+        profileModalTitle: "👤 Խաղացողի Պրոֆիլ",
+        logout: "🚪 Դուրս գալ",
+        findGame: "Գտնել Մրցակից",
+        waiting: "Սպասում ենք մրցակցին...",
+        cancelQueue: "Չեղարկել հերթը",
+        wins: "Հաղթանակներ",
+        losses: "Պարտություններ",
+        draws: "Ոչ-ոքի",
+        history: "Խաղերի պատմություն",
+        noGames: "Խաղեր դեռ չկան",
+        close: "Փակել",
+        welcomeTitle: "CryptoChess PvP",
+        welcomeDesc: "Մուտք գործեք բացառապես TON դրամապանակով և խաղացեք 3 րոպեանոց blitz շախմատ իրական խաղադրույքներով:",
+        opponent: "Մրցակից",
+        you: "Դուք",
+        blitzTitle: "🎮 1v1 Blitz (3 րոպե)",
+        betLabel: "Խաղադրույք (TON):",
+        offerDraw: "🤝 Առաջարկել Ոչ-ոքի",
+        resign: "🏳️ Հանձնվել",
+        statusReady: "Պատրաստ է որոնման",
+        movesHistory: "Քայլերի Պատմություն:",
+        drawOffer: "Մրցակիցն առաջարկում է ոչ-ոքի:",
+        accept: "Ընդունել",
+        decline: "Մերժել"
+      },
       zh: {
         online: "在线",
         totalUsers: "总用户",
         profile: "个人资料",
         profileModalTitle: "👤 玩家个人资料",
-        connectWallet: "连接钱包",
+        logout: "🚪 断开连接",
         findGame: "寻找游戏",
         waiting: "等待对手...",
         cancelQueue: "取消排队",
@@ -322,7 +326,7 @@
         totalUsers: "कुल उपयोगकर्ता",
         profile: "प्रोफाइल",
         profileModalTitle: "👤 खिलाड़ी प्रोफाइल",
-        connectWallet: "वॉलेट कनेक्ट करें",
+        logout: "🚪 डिस्कनेक्ट",
         findGame: "गेम खोजें",
         waiting: "प्रतिद्वंद्वी की प्रतीक्षा है...",
         cancelQueue: "कतार रद्द करें",
@@ -348,36 +352,40 @@
       }
     };
 
-    let currentLang = localStorage.getItem('chessLang') || 'hy';
+    // Առաջին բացման ժամանակ կամ եթե լեզու չկա ընտրված, հիմնականը դարձնել անգլերեն (en)
+    let currentLang = localStorage.getItem('chessLang') || 'en';
 
     function setLanguage(lang) {
+      if (!translations[lang]) return;
       currentLang = lang;
       localStorage.setItem('chessLang', lang);
       updateTexts();
     }
 
     function t(key) {
-      return translations[currentLang][key] || translations['en'][key] || key;
+      return (translations[currentLang] && translations[currentLang][key]) || translations['en'][key] || key;
     }
 
     function updateTexts() {
       document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n');
-        if (translations[currentLang][key]) {
-          el.innerText = translations[currentLang][key];
+        const translatedText = translations[currentLang][key] || translations['en'][key];
+        if (translatedText) {
+          el.innerText = translatedText;
         }
       });
       
-      // Ակտիվ դրոշակի նշագրում
       document.querySelectorAll('.lang-btn').forEach(btn => {
         btn.classList.remove('active');
-        if (btn.getAttribute('onclick').includes(currentLang)) {
+        // Ստուգում ենք կոճակի onclick ատրիբուտը
+        const onclickAttr = btn.getAttribute('onclick') || '';
+        if (onclickAttr.includes(`'${currentLang}'`) || onclickAttr.includes(`"${currentLang}"`)) {
           btn.classList.add('active');
         }
       });
     }
 
-    // Էջի բեռնման ժամանակ թարմացնել լեզուն
+    // Ամեն ինչ կարդացվելուն պես միանգամից կիրառել լեզուն
     window.addEventListener('DOMContentLoaded', () => {
       setLanguage(currentLang);
     });
@@ -425,7 +433,7 @@
         div.innerHTML = `
           <div>
             <span class="${resClass}">${h.result}</span> <span style="color: #94a3b8; font-size: 11px;">(${h.bet} TON)</span><br>
-            <span style="color: #64748b; font-size: 10px;">Մրցակից՝ ${shortOpp}</span>
+            <span style="color: #64748b; font-size: 10px;">Opponent: ${shortOpp}</span>
           </div>
           <div style="text-align: right; font-weight: bold; color: #38bdf8; font-size: 12px;">
             ${h.payout}
@@ -440,6 +448,17 @@
     });
     document.getElementById('closeModalBtn').addEventListener('click', () => {
       document.getElementById('profileModal').style.display = 'none';
+    });
+
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      document.getElementById('profileModal').style.display = 'none';
+      if (tonConnectUI.connected) {
+        await tonConnectUI.disconnect();
+      }
+      walletAddress = null;
+      document.getElementById('game-screen').style.display = 'none';
+      document.getElementById('openProfileBtn').style.display = 'none';
+      document.getElementById('welcome-screen').style.display = 'flex';
     });
 
     const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
@@ -463,7 +482,7 @@
       document.getElementById('welcome-screen').style.display = 'none';
       document.getElementById('game-screen').style.display = 'flex';
       document.getElementById('openProfileBtn').style.display = 'block';
-      document.getElementById('modalWallet').innerText = "Հասցե: " + walletAddress;
+      document.getElementById('modalWallet').innerText = "Address: " + walletAddress;
       if (!board) initBoard();
     }
 
@@ -482,11 +501,11 @@
       const bet = parseInt(document.getElementById('betAmount').value);
       
       if (!tonConnectUI.connected) {
-        alert("Խնդրում ենք միացնել դրամապանակը:");
+        alert("Please connect your wallet first.");
         return;
       }
 
-      document.getElementById('status').innerText = `Հաստատեք ${bet} TON վճարումը դրամապանակում...`;
+      document.getElementById('status').innerText = `Confirm ${bet} TON payment in your wallet...`;
 
       const transaction = {
         validUntil: Math.floor(Date.now() / 1000) + 60,
@@ -509,8 +528,8 @@
         startQueueState();
 
       } catch (e) {
-        console.error("Վճարումը չեղարկվեց:", e);
-        document.getElementById('status').innerText = "Վճարումը չեղարկվեց կամ ձախողվեց:";
+        console.error("Payment cancelled:", e);
+        document.getElementById('status').innerText = "Payment cancelled or failed.";
       }
     });
 
@@ -520,7 +539,7 @@
 
     socket.on('queueCancelled', (data) => {
       resetQueueUI();
-      document.getElementById('status').innerText = data.message || "Որոնումը չեղարկվեց, գումարը վերադարձվեց:";
+      document.getElementById('status').innerText = data.message || "Queue cancelled.";
     });
 
     function startQueueState() {
@@ -531,7 +550,7 @@
       
       cancelSecondsLeft = 30;
       cancelBtn.innerText = `${t('cancelQueue')} (${cancelSecondsLeft}s)`;
-      document.getElementById('status').innerText = `Որոնում ենք մրցակից...`;
+      document.getElementById('status').innerText = `Searching for opponent...`;
 
       if (cancelTimer) clearInterval(cancelTimer);
       cancelTimer = setInterval(() => {
@@ -564,7 +583,7 @@
     });
 
     document.getElementById('resignBtn').addEventListener('click', () => {
-      if (currentGameId && confirm("Վստա՞հ եք, որ ուզում եք հանձնվել:")) {
+      if (currentGameId && confirm("Are you sure you want to resign?")) {
         socket.emit('resign', { gameId: currentGameId });
       }
     });
@@ -588,7 +607,7 @@
       document.getElementById('resignBtn').style.display = 'block';
       document.getElementById('drawArea').style.display = 'block';
       document.getElementById('findMatchBtn').style.display = 'none';
-      document.getElementById('status').innerText = `Խաղը սկսվեց!`;
+      document.getElementById('status').innerText = `Game started!`;
     });
 
     socket.on('waiting', (msg) => { document.getElementById('status').innerText = msg; });
@@ -606,8 +625,8 @@
 
     socket.on('drawSent', () => {
       const drawArea = document.getElementById('drawArea');
-      drawArea.innerHTML = `<button class="btn btn-warning" style="width: 100%; cursor: default;" disabled>⏳ Առաջարկն ուղարկված է</button>`;
-      document.getElementById('status').innerText = "Ոչ-ոքիի առաջարկն ուղարկված է մրցակցին...";
+      drawArea.innerHTML = `<button class="btn btn-warning" style="width: 100%; cursor: default;" disabled>⏳ Draw offer sent</button>`;
+      document.getElementById('status').innerText = "Draw offer sent to opponent...";
     });
 
     socket.on('drawOffered', () => {
@@ -622,7 +641,7 @@
     });
 
     socket.on('drawDeclined', () => {
-      document.getElementById('status').innerText = "Մրցակիցը մերժեց ոչ-ոքիի առաջարկը:";
+      document.getElementById('status').innerText = "Opponent declined the draw offer.";
     });
 
     socket.on('resetDrawUI', () => {
@@ -645,14 +664,13 @@
     socket.on('gameOver', (data) => {
       const banner = document.getElementById('winner-banner');
       banner.style.display = 'block';
-      const winnerDisplay = data.winner ? data.winner : 'Անհայտ';
 
       document.getElementById('resignBtn').style.display = 'none';
       document.getElementById('drawArea').style.display = 'none';
       document.getElementById('findMatchBtn').style.display = 'block';
 
-      banner.innerHTML = `🏁 Խաղն ավարտվեց! Մրցանակ՝ <b>${data.payout} TON</b>`;
-      document.getElementById('status').innerText = "Խաղն ավարտվեց:";
+      banner.innerHTML = `🏁 Game Over! Result: <b>${data.result}</b>`;
+      document.getElementById('status').innerText = "Game over.";
 
       socket.emit('registerUser', { wallet: walletAddress });
     });
