@@ -1,13 +1,60 @@
+require('dotenv').config();
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const { Chess } = require('chess.js');
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const { TonClient, WalletContractV4, internal, toNano } = require('@ton/ton');
+const { mnemonicToPrivateKey } = require('@ton/crypto');
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
+
+const client = new TonClient({
+    endpoint: 'https://toncenter.com/api/v2/jsonRPC',
+    apiKey: process.env.TON_API_KEY || ''
+});
+
+// TON ավտոմատ փոխանցման/վերադարձման ֆունկցիա
+async function sendTonToWallet(toAddress, amountTon, comment = 'CryptoChess Payout') {
+    try {
+        if (!process.env.TREASURY_MNEMONIC) {
+            console.log('⚠️ TREASURY_MNEMONIC-ը սահմանված չէ, բլոկչեյնով վճարումը բաց է թողնվում:');
+            return false;
+        }
+
+        const mnemonic = process.env.TREASURY_MNEMONIC.split(' ');
+        const key = await mnemonicToPrivateKey(mnemonic);
+
+        const wallet = WalletContractV4.create({ workchain: 0, publicKey: key.publicKey });
+        const walletContract = client.open(wallet);
+
+        const seqno = await walletContract.getSeqno();
+        
+        console.log(`💸 Ուղարկվում է ${amountTon} TON հասցեին՝ ${toAddress} (${comment})...`);
+
+        await walletContract.sendTransfer({
+            seqno,
+            secretKey: key.secretKey,
+            messages: [
+                internal({
+                    to: toAddress,
+                    value: toNano(amountTon.toString()),
+                    bounce: false,
+                    body: comment
+                })
+            ]
+        });
+
+        console.log('✅ Տրանզակցիան հաջողությամբ կատարվեց!');
+        return true;
+    } catch (error) {
+        console.error('❌ Սխալ տրանզակցիայի ժամանակ:', error);
+        return false;
+    }
+}
 
 // Ստատիկ ֆայլերի տրամադրում public թղթապանակից
 app.use(express.static(path.join(__dirname, 'public')));
@@ -22,6 +69,7 @@ app.get('/tonconnect-manifest.json', (req, res) => {
     "privacyPolicyUrl": "https://cryptochess-kxfp.onrender.com"
   });
 });
+
 const db = new sqlite3.Database('./cryptochess.db', (err) => {
   if (err) console.error('DB Error:', err.message);
   else console.log('📦 Միացավ SQLite տվյալների բազային');
@@ -73,11 +121,19 @@ io.on('connection', (socket) => {
     });
   });
 
-  socket.on('findMatch', (data) => {
+  // Հերթագրում և խաղի որոնում (խաղադրույքով)
+  socket.on('joinQueue', (data) => {
     const bet = data.bet || 1;
-    const wallet = data.wallet || socket.userWallet || ('PLAYER_' + socket.id.substring(0, 5));
-    const player = { socketId: socket.id, wallet: wallet, bet: bet };
+    const wallet = data.wallet || socket.userWallet;
     
+    if (!wallet) {
+      socket.emit('errorMsg', 'Խնդրում ենք միացնել դրամապանակը:');
+      return;
+    }
+
+    if (waitingPlayers.some(p => p.socketId === socket.id)) return;
+
+    const player = { socketId: socket.id, wallet: wallet, bet: bet };
     const opponentIndex = waitingPlayers.findIndex(p => p.bet === bet && p.socketId !== socket.id);
 
     if (opponentIndex !== -1) {
@@ -105,6 +161,16 @@ io.on('connection', (socket) => {
     } else {
       waitingPlayers.push(player);
       socket.emit('waiting', `Սպասում ենք մրցակցին (${bet} TON)...`);
+    }
+  });
+
+  // Եթե խաղացողը չեղարկում է հերթը մինչև մրցակից գտնելը
+  socket.on('cancelQueue', async () => {
+    const index = waitingPlayers.findIndex(p => p.socketId === socket.id);
+    if (index !== -1) {
+      const player = waitingPlayers.splice(index, 1)[0];
+      await sendTonToWallet(player.wallet, player.bet, 'CryptoChess Refund');
+      socket.emit('cancelled', 'Հերթը չեղարկվեց, գումարը հետ ուղարկվեց ձեր դրամապանակ:');
     }
   });
 
@@ -188,10 +254,17 @@ io.on('connection', (socket) => {
     endGame(gameId, 'resign', winnerWallet);
   });
 
-  socket.on('disconnect', () => {
+  socket.on('disconnect', async () => {
     onlineCount = Math.max(0, onlineCount - 1);
     broadcastStats();
-    waitingPlayers = waitingPlayers.filter(p => p.socketId !== socket.id);
+
+    // Եթե սպասողների հերթում էր ու դուրս եկավ, հետ ենք ուղարկում գումարը
+    const index = waitingPlayers.findIndex(p => p.socketId === socket.id);
+    if (index !== -1) {
+      const player = waitingPlayers.splice(index, 1)[0];
+      await sendTonToWallet(player.wallet, player.bet, 'CryptoChess Disconnect Refund');
+    }
+
     console.log('❌ Խաղացողը դուրս եկավ:', socket.id, '| Օնլայն՝', onlineCount);
   });
 });
@@ -264,13 +337,20 @@ function startGameTimer(gameId) {
   }, 1000);
 }
 
-function endGame(gameId, reason, winnerWallet) {
+async function endGame(gameId, reason, winnerWallet) {
   const game = activeGames[gameId];
   if (!game) return;
 
   if (game.timerInterval) clearInterval(game.timerInterval);
 
   let payout = (reason === 'draw') ? game.bet : (game.prizePool * 0.9).toFixed(2);
+
+  if (reason === 'draw') {
+    await sendTonToWallet(game.p1.wallet, game.bet, 'CryptoChess Draw Refund');
+    await sendTonToWallet(game.p2.wallet, game.bet, 'CryptoChess Draw Refund');
+  } else if (winnerWallet && (winnerWallet.startsWith('EQ') || winnerWallet.startsWith('UQ'))) {
+    await payWinnerOnBlockchain(winnerWallet, payout); // Կամ sendTonToWallet-ն օգտագործել
+  }
 
   io.to(game.p1.socketId).emit('gameOver', { result: reason, winner: winnerWallet, payout });
   io.to(game.p2.socketId).emit('gameOver', { result: reason, winner: winnerWallet, payout });
