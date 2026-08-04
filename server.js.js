@@ -13,9 +13,13 @@ const io = new Server(server);
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 
-// Հավելյալ ապահովում TON Connect-ի մանիֆեստի համար
+// TON Connect-ի մանիֆեստի ուղղակի վերադարձ սերվերից (բացառում է Not Found սխալը)
 app.get('/tonconnect-manifest.json', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'tonconnect-manifest.json'));
+  res.json({
+    "url": "https://cryptochess-kxfp.onrender.com",
+    "name": "CryptoChess Blitz",
+    "iconUrl": "https://cryptochess-kxfp.onrender.com/icon.png"
+  });
 });
 
 const db = new sqlite3.Database('./cryptochess.db', (err) => {
