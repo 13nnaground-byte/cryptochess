@@ -6,6 +6,7 @@
   <title>CryptoChess TON - Web3 Chess</title>
   
   <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flag-icon-css/6.6.0/css/flag-icons.min.css">
   <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 
@@ -21,10 +22,13 @@
 
     .header-right { display: flex; align-items: center; gap: 12px; }
     
-    .lang-selector { display: flex; gap: 5px; background: #131b2e; padding: 4px; border-radius: 8px; border: 1px solid #1f293d; }
-    .lang-btn { background: transparent; border: none; cursor: pointer; font-size: 16px; padding: 4px 8px; border-radius: 6px; transition: 0.2s; display: flex; align-items: center; justify-content: center; }
+    .lang-selector { display: flex; gap: 5px; background: #131b2e; padding: 4px; border-radius: 8px; border: 1px solid #1f293d; align-items: center; }
+    .lang-btn { background: transparent; border: none; cursor: pointer; padding: 6px 10px; border-radius: 6px; transition: 0.2s; display: flex; align-items: center; justify-content: center; }
     .lang-btn:hover { background: #1e293b; }
     .lang-btn.active { background: #0284c7; }
+    
+    /* Դրոշների չափսերը */
+    .flag-icon { font-size: 1.2em; border-radius: 2px; }
 
     .btn-profile { background: #1e293b; color: #38bdf8; border: 1px solid #334155; padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; display: none; }
     .btn-profile:hover { background: #334155; }
@@ -96,13 +100,13 @@
     </div>
 
     <div class="header-right">
-      <!-- 🇺🇸 Անգլերենը առաջինը, հետո ռուսերեն, հայերեն և այլն -->
+      <!-- 🇺🇸 Անգլերենը առաջինը, հետո ռուսերեն, հայերեն և այլն (իրական SVG դրոշներով) -->
       <div class="lang-selector">
-        <button class="lang-btn" onclick="setLanguage('en')" title="English">🇺🇸</button>
-        <button class="lang-btn" onclick="setLanguage('ru')" title="Русский">🇷🇺</button>
-        <button class="lang-btn" onclick="setLanguage('hy')" title="Հայերեն">🇦🇲</button>
-        <button class="lang-btn" onclick="setLanguage('zh')" title="中文">🇨🇳</button>
-        <button class="lang-btn" onclick="setLanguage('hi')" title="हिन्दी">🇮🇳</button>
+        <button class="lang-btn" onclick="setLanguage('en')" title="English"><span class="flag-icon flag-icon-us"></span></button>
+        <button class="lang-btn" onclick="setLanguage('ru')" title="Русский"><span class="flag-icon flag-icon-ru"></span></button>
+        <button class="lang-btn" onclick="setLanguage('hy')" title="Հայերեն"><span class="flag-icon flag-icon-am"></span></button>
+        <button class="lang-btn" onclick="setLanguage('zh')" title="中文"><span class="flag-icon flag-icon-cn"></span></button>
+        <button class="lang-btn" onclick="setLanguage('hi')" title="हिन्दी"><span class="flag-icon flag-icon-in"></span></button>
       </div>
 
       <button id="openProfileBtn" class="btn-profile">👤 <span data-i18n="profile">Profile</span></button>
@@ -352,7 +356,6 @@
       }
     };
 
-    // Առաջին բացման ժամանակ կամ եթե լեզու չկա ընտրված, հիմնականը դարձնել անգլերեն (en)
     let currentLang = localStorage.getItem('chessLang') || 'en';
 
     function setLanguage(lang) {
@@ -377,7 +380,6 @@
       
       document.querySelectorAll('.lang-btn').forEach(btn => {
         btn.classList.remove('active');
-        // Ստուգում ենք կոճակի onclick ատրիբուտը
         const onclickAttr = btn.getAttribute('onclick') || '';
         if (onclickAttr.includes(`'${currentLang}'`) || onclickAttr.includes(`"${currentLang}"`)) {
           btn.classList.add('active');
@@ -385,7 +387,6 @@
       });
     }
 
-    // Ամեն ինչ կարդացվելուն պես միանգամից կիրառել լեզուն
     window.addEventListener('DOMContentLoaded', () => {
       setLanguage(currentLang);
     });
