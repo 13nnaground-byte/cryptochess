@@ -75,13 +75,23 @@ const db = new sqlite3.Database('./cryptochess.db', (err) => {
   else console.log('📦 Միացավ SQLite տվյալների բազային');
 });
 
-db.run(`CREATE TABLE IF NOT EXISTS users (
-  wallet TEXT PRIMARY KEY,
-  wins INTEGER DEFAULT 0,
-  losses INTEGER DEFAULT 0,
-  draws INTEGER DEFAULT 0,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-)`);
+// Օգտատերերի աղյուսակ՝ ID-ով (սկսած 1000001-ից)
+db.serialize(() => {
+  db.run(`CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    wallet TEXT UNIQUE,
+    wins INTEGER DEFAULT 0,
+    losses INTEGER DEFAULT 0,
+    draws INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
+
+  db.get(`SELECT seq FROM sqlite_sequence WHERE name = 'users'`, (err, row) => {
+    if (!row) {
+      db.run(`INSERT INTO sqlite_sequence(name, seq) VALUES('users', 1000000)`);
+    }
+  });
+});
 
 db.run(`CREATE TABLE IF NOT EXISTS games_history (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -258,7 +268,6 @@ io.on('connection', (socket) => {
     onlineCount = Math.max(0, onlineCount - 1);
     broadcastStats();
 
-    // Եթե սպասողների հերթում էր ու դուրս եկավ, հետ ենք ուղարկում գումարը
     const index = waitingPlayers.findIndex(p => p.socketId === socket.id);
     if (index !== -1) {
       const player = waitingPlayers.splice(index, 1)[0];
@@ -348,8 +357,8 @@ async function endGame(gameId, reason, winnerWallet) {
   if (reason === 'draw') {
     await sendTonToWallet(game.p1.wallet, game.bet, 'CryptoChess Draw Refund');
     await sendTonToWallet(game.p2.wallet, game.bet, 'CryptoChess Draw Refund');
-  } else if (winnerWallet && (winnerWallet.startsWith('EQ') || winnerWallet.startsWith('UQ'))) {
-    await payWinnerOnBlockchain(winnerWallet, payout); // Կամ sendTonToWallet-ն օգտագործել
+  } else if (winnerWallet) {
+    await sendTonToWallet(winnerWallet, payout, 'CryptoChess Prize Win');
   }
 
   io.to(game.p1.socketId).emit('gameOver', { result: reason, winner: winnerWallet, payout });
