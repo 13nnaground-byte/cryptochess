@@ -16,7 +16,6 @@ const db = new sqlite3.Database('./cryptochess.db', (err) => {
   else console.log('📦 Միացավ SQLite տվյալների բազային');
 });
 
-// Օգտատերերի աղյուսակ
 db.run(`CREATE TABLE IF NOT EXISTS users (
   wallet TEXT PRIMARY KEY,
   wins INTEGER DEFAULT 0,
@@ -25,7 +24,6 @@ db.run(`CREATE TABLE IF NOT EXISTS users (
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 )`);
 
-// Խաղերի պատմության աղյուսակ
 db.run(`CREATE TABLE IF NOT EXISTS games_history (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   wallet TEXT,
@@ -206,7 +204,6 @@ function recordGameResult(game, winnerSocketId) {
   const p2Won = winnerSocketId === p2.socketId;
   const isDraw = !winnerSocketId;
 
-  // Թարմացնում ենք DB վիճակագրությունը
   if (isDraw) {
     db.run(`UPDATE users SET draws = draws + 1 WHERE wallet = ?`, [p1.wallet]);
     db.run(`UPDATE users SET draws = draws + 1 WHERE wallet = ?`, [p2.wallet]);
@@ -270,7 +267,6 @@ function endGame(gameId, reason, winnerWallet) {
   io.to(game.p1.socketId).emit('gameOver', { result: reason, winner: winnerWallet, payout });
   io.to(game.p2.socketId).emit('gameOver', { result: reason, winner: winnerWallet, payout });
 
-  // Թարմացնում ենք երկու խաղացողների պրոֆիլի տվյալները սերվերից
   sendUserData(io.sockets.sockets.get(game.p1.socketId), game.p1.wallet);
   sendUserData(io.sockets.sockets.get(game.p2.socketId), game.p2.wallet);
 

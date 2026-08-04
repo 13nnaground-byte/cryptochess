@@ -188,7 +188,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
 
   <script>
-    const socket = io();
+    const socket = io(window.location.hostname === 'localhost' ? 'http://localhost:3000' : 'https://cryptochess-kxfp.onrender.com');
     let walletAddress = null;
     let board = null;
     let game = new Chess();
@@ -201,12 +201,10 @@
     });
 
     socket.on('userStats', (data) => {
-      // Ընդհանուր վիճակագրություն
       document.getElementById('statWins').innerText = data.user.wins;
       document.getElementById('statLosses').innerText = data.user.losses;
       document.getElementById('statDraws').innerText = data.user.draws;
 
-      // Խաղերի պատմություն
       const historyList = document.getElementById('historyList');
       historyList.innerHTML = '';
 
@@ -424,7 +422,7 @@
 
     function onDragStart (source, piece) {
       if (game.game_over()) return false;
-      if ((playerCardColor === 'w' && piece.search(/^b/) !== -1) ||
+      if ((playerColor === 'w' && piece.search(/^b/) !== -1) ||
           (playerColor === 'b' && piece.search(/^w/) !== -1)) return false;
       if ((game.turn() === 'w' && playerColor !== 'w') ||
           (game.turn() === 'b' && playerColor !== 'b')) return false;
