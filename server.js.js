@@ -102,10 +102,10 @@ db.run(`CREATE TABLE IF NOT EXISTS games_history (
   played_at DATETIME DEFAULT CURRENT_TIMESTAMP
 )`);
 
-let waitingPlayers = []; // { socketId, wallet, bet }
+let waitingPlayers = []; 
 let activeGames = {};
 let onlineCount = 0;
-let lastActionTimes = {}; // Հակա-սպամ / Rate limit-ի համար
+let lastActionTimes = {}; 
 
 const GAME_TIME = 180; // 3 րոպե
 
@@ -131,7 +131,6 @@ io.on('connection', (socket) => {
     });
   });
 
-  // Հերթագրում և հակառակորդի որոնում (Անտիչիտ և բազմակի մուտքի արգելքով)
   socket.on('joinQueue', (data) => {
     const now = Date.now();
     if (lastActionTimes[socket.id] && (now - lastActionTimes[socket.id] < 1000)) {
@@ -148,13 +147,11 @@ io.on('connection', (socket) => {
       return;
     }
 
-    // 1. Արդյոք այս դրամապանակն արդեն սպասման հերթում է՞
     if (waitingPlayers.some(p => p.wallet === wallet || p.socketId === socket.id)) {
       socket.emit('errorMsg', 'Այս դրամապանակն արդեն սպասման հերթում է:');
       return;
     }
 
-    // 2. Արդյոք այս դրամապանակն արդեն ԱԿՏԻՎ խաղի մե՞ջ է (Արգելում է միաժամանակ 2 խաղ խաղալ)
     for (const gameId in activeGames) {
       const g = activeGames[gameId];
       if ((g.p1 && g.p1.wallet === wallet) || (g.p2 && g.p2.wallet === wallet)) {
@@ -194,7 +191,6 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Խաղացողը ինքնակամ չեղարկում է հերթը
   socket.on('cancelQueue', async () => {
     const index = waitingPlayers.findIndex(p => p.socketId === socket.id);
     if (index !== -1) {
@@ -204,7 +200,6 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Շախմատային քայլերի մշակում (Rate Limit-ով և հերթի ստուգմամբ)
   socket.on('makeMove', ({ gameId, move }) => {
     const now = Date.now();
     if (lastActionTimes[socket.id] && (now - lastActionTimes[socket.id] < 300)) {
@@ -216,7 +211,6 @@ io.on('connection', (socket) => {
     const game = activeGames[gameId];
     if (!game) return;
 
-    // Ստուգում ենք՝ արդյոք քայլ անողը հենց այդ պահին խաղալու իրավունք ունի՞
     const currentTurn = typeof game.chess.turn === 'function' ? game.chess.turn() : game.chess.turn;
     const isP1Turn = currentTurn === 'w';
     const isPlayer1 = socket.id === game.p1.socketId;
@@ -301,7 +295,6 @@ io.on('connection', (socket) => {
     endGame(gameId, 'resign', winnerWallet);
   });
 
-  // Անջատման կառավարում և հիշողության մաքրում
   socket.on('disconnect', async () => {
     onlineCount = Math.max(0, onlineCount - 1);
     broadcastStats();
@@ -320,8 +313,6 @@ io.on('connection', (socket) => {
         const winnerSocketId = isP1 ? game.p2.socketId : game.p1.socketId;
         const winnerWallet = isP1 ? game.p2.wallet : game.p1.wallet;
 
-        console.log(`⚠️ Խաղացողը դուրս եկավ ակտիվ խաղից (${socket.id}). Հաղթանակը տրվում է մրցակցին:`);
-        
         recordGameResult(game, winnerSocketId);
         endGame(gameId, 'disconnect', winnerWallet);
         break;
