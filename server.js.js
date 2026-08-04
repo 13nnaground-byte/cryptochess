@@ -13,7 +13,7 @@ const io = new Server(server);
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 
-// Հավելյալ ապահովում TON Connect-ի մանիֆեստի համար, եթե այն հենց արմատային տղթապանակում է
+// Հավելյալ ապահովում TON Connect-ի մանիֆեստի համար
 app.get('/tonconnect-manifest.json', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'tonconnect-manifest.json'));
 });
@@ -117,7 +117,6 @@ io.on('connection', (socket) => {
         }
 
         game.drawOfferedBy = null;
-
         io.to(game.p1.socketId).emit('resetDrawUI');
         io.to(game.p2.socketId).emit('resetDrawUI');
 
@@ -150,8 +149,7 @@ io.on('connection', (socket) => {
 
   socket.on('offerDraw', ({ gameId }) => {
     const game = activeGames[gameId];
-    if (!game) return;
-    if (game.drawOfferedBy) return;
+    if (!game || game.drawOfferedBy) return;
 
     game.drawOfferedBy = socket.id;
     const opponentSocketId = socket.id === game.p1.socketId ? game.p2.socketId : game.p1.socketId;
@@ -208,7 +206,6 @@ function recordGameResult(game, winnerSocketId) {
   const p2 = game.p2;
 
   const p1Won = winnerSocketId === p1.socketId;
-  const p2Won = winnerSocketId === p2.socketId;
   const isDraw = !winnerSocketId;
 
   if (isDraw) {
