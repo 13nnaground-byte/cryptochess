@@ -8,9 +8,9 @@
   },
   "dependencies": {
     "@ton/crypto": "^3.3.0",
-    "@ton/ton": "^13.9.0",
+    "@ton/ton": "^13.11.2",
     "chess.js": "^0.13.4",
-    "dotenv": "^16.4.5",
+    "dotenv": "^16.6.1",
     "express": "^4.19.2",
     "mongoose": "^8.3.1",
     "socket.io": "^4.7.5",
