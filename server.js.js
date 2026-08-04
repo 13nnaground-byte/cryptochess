@@ -56,7 +56,6 @@ async function sendTonToWallet(toAddress, amountTon, comment = 'CryptoChess Payo
     }
 }
 
-// Ստատիկ ֆայլերի տրամադրում public թղթապանակից
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 
@@ -103,11 +102,11 @@ db.run(`CREATE TABLE IF NOT EXISTS games_history (
   played_at DATETIME DEFAULT CURRENT_TIMESTAMP
 )`);
 
-let waitingPlayers = [];
+let waitingPlayers = []; // { socketId, wallet, bet }
 let activeGames = {};
 let onlineCount = 0;
 
-const GAME_TIME = 180;
+const GAME_TIME = 180; // 3 րոպե
 
 function broadcastStats() {
   db.get(`SELECT COUNT(*) as total FROM users`, (err, row) => {
@@ -131,7 +130,7 @@ io.on('connection', (socket) => {
     });
   });
 
-  // Հերթագրում և խաղի որոնում (խաղադրույքով)
+  // Հերթագրում և հակառակորդի որոնում
   socket.on('joinQueue', (data) => {
     const bet = data.bet || 1;
     const wallet = data.wallet || socket.userWallet;
@@ -143,7 +142,6 @@ io.on('connection', (socket) => {
 
     if (waitingPlayers.some(p => p.socketId === socket.id)) return;
 
-    const player = { socketId: socket.id, wallet: wallet, bet: bet };
     const opponentIndex = waitingPlayers.findIndex(p => p.bet === bet && p.socketId !== socket.id);
 
     if (opponentIndex !== -1) {
@@ -155,7 +153,7 @@ io.on('connection', (socket) => {
       activeGames[gameId] = { 
         id: gameId,
         chess: chess, 
-        p1: player,   
+        p1: { socketId: socket.id, wallet: wallet, bet: bet },   
         p2: opponent, 
         bet: bet, 
         prizePool: prizePool,
@@ -165,25 +163,27 @@ io.on('connection', (socket) => {
         drawOfferedBy: null
       };
 
-      io.to(player.socketId).emit('gameStart', { gameId, color: 'w', opponent: opponent.wallet, prizePool, time: GAME_TIME });
-      io.to(opponent.socketId).emit('gameStart', { gameId, color: 'b', opponent: player.wallet, prizePool, time: GAME_TIME });
+      io.to(socket.id).emit('gameStart', { gameId, color: 'w', opponent: opponent.wallet, prizePool, time: GAME_TIME });
+      io.to(opponent.socketId).emit('gameStart', { gameId, color: 'b', opponent: wallet, prizePool, time: GAME_TIME });
 
     } else {
+      const player = { socketId: socket.id, wallet: wallet, bet: bet };
       waitingPlayers.push(player);
       socket.emit('waiting', `Սպասում ենք մրցակցին (${bet} TON)...`);
     }
   });
 
-  // Որոնման ձեռքով չեղարկում և գումարի հետվերադարձ
+  // Խաղացողը ինքնակամ չեղարկում է հերթը (օրինակ 30վրկ հետո կամ ցանկացած պահի)
   socket.on('cancelQueue', async () => {
     const index = waitingPlayers.findIndex(p => p.socketId === socket.id);
     if (index !== -1) {
       const player = waitingPlayers.splice(index, 1)[0];
-      await sendTonToWallet(player.wallet, player.bet, 'CryptoChess Refund');
+      await sendTonToWallet(player.wallet, player.bet, 'CryptoChess Manual Refund');
       socket.emit('queueCancelled', { message: 'Հերթը չեղարկվեց, գումարը վերադարձվեց ձեր դրամապանակ:' });
     }
   });
 
+  // Շախմատային քայլերի մշակում
   socket.on('makeMove', ({ gameId, move }) => {
     const game = activeGames[gameId];
     if (!game) return;
@@ -264,15 +264,32 @@ io.on('connection', (socket) => {
     endGame(gameId, 'resign', winnerWallet);
   });
 
+  // Անջատման կառավարում (Anti-Cheat & Disconnect)
   socket.on('disconnect', async () => {
     onlineCount = Math.max(0, onlineCount - 1);
     broadcastStats();
 
-    // Եթե խաղացողը հերթում էր ու անջատվեց, գումարը հետ ենք ուղարկում
+    // 1. Եթե խաղացողը սպասման հերթում էր՝ անջատվելիս գումարը հետ ենք ուղարկում
     const index = waitingPlayers.findIndex(p => p.socketId === socket.id);
     if (index !== -1) {
       const player = waitingPlayers.splice(index, 1)[0];
-      await sendTonToWallet(player.wallet, player.bet, 'CryptoChess Disconnect Refund');
+      await sendTonToWallet(player.wallet, player.bet, 'CryptoChess Queue Disconnect Refund');
+    }
+
+    // 2. Եթե խաղացողը ԱԿՏԻՎ ԽԱՂԻ մեջ էր՝ գումարը ՉԻ վերադարձվում, մրցակիցը հաղթում է
+    for (const gameId in activeGames) {
+      const game = activeGames[gameId];
+      if (game.p1.socketId === socket.id || game.p2.socketId === socket.id) {
+        const isP1 = game.p1.socketId === socket.id;
+        const winnerSocketId = isP1 ? game.p2.socketId : game.p1.socketId;
+        const winnerWallet = isP1 ? game.p2.wallet : game.p1.wallet;
+
+        console.log(`⚠️ Խաղացողը դուրս եկավ ակտիվ խաղից (${socket.id}). Հաղթանակը տրվում է մրցակցին:`);
+        
+        recordGameResult(game, winnerSocketId);
+        endGame(gameId, 'disconnect', winnerWallet);
+        break;
+      }
     }
 
     console.log('❌ Խաղացողը դուրս եկավ:', socket.id, '| Օնլայն՝', onlineCount);
@@ -300,9 +317,9 @@ function recordGameResult(game, winnerSocketId) {
     db.run(`UPDATE users SET draws = draws + 1 WHERE wallet = ?`, [p2.wallet]);
 
     db.run(`INSERT INTO games_history (wallet, opponent, bet, result, payout) VALUES (?, ?, ?, ?, ?)`, 
-      [p1.wallet, p2.wallet, p1.bet, 'Ոչ-ոքի', p1.bet + ' TON']);
+      [p1.wallet, p2.wallet, p1.bet, 'Ոչ-ոքի', '0.97 TON']);
     db.run(`INSERT INTO games_history (wallet, opponent, bet, result, payout) VALUES (?, ?, ?, ?, ?)`, 
-      [p2.wallet, p1.wallet, p2.bet, 'Ոչ-ոքի', p2.bet + ' TON']);
+      [p2.wallet, p1.wallet, p2.bet, 'Ոչ-ոքի', '0.97 TON']);
   } else {
     const winnerWallet = p1Won ? p1.wallet : p2.wallet;
     const loserWallet = p1Won ? p2.wallet : p1.wallet;
@@ -353,17 +370,16 @@ async function endGame(gameId, reason, winnerWallet) {
 
   if (game.timerInterval) clearInterval(game.timerInterval);
 
-  let payout = (reason === 'draw') ? game.bet : (game.prizePool * 0.9).toFixed(2);
-
   if (reason === 'draw') {
-    await sendTonToWallet(game.p1.wallet, game.bet, 'CryptoChess Draw Refund');
-    await sendTonToWallet(game.p2.wallet, game.bet, 'CryptoChess Draw Refund');
+    await sendTonToWallet(game.p1.wallet, 0.97, 'CryptoChess Draw Payout');
+    await sendTonToWallet(game.p2.wallet, 0.97, 'CryptoChess Draw Payout');
   } else if (winnerWallet) {
+    let payout = (game.prizePool * 0.9).toFixed(2);
     await sendTonToWallet(winnerWallet, payout, 'CryptoChess Prize Win');
   }
 
-  io.to(game.p1.socketId).emit('gameOver', { result: reason, winner: winnerWallet, payout });
-  io.to(game.p2.socketId).emit('gameOver', { result: reason, winner: winnerWallet, payout });
+  io.to(game.p1.socketId).emit('gameOver', { result: reason, winner: winnerWallet });
+  io.to(game.p2.socketId).emit('gameOver', { result: reason, winner: winnerWallet });
 
   const s1 = io.sockets.sockets.get(game.p1.socketId);
   const s2 = io.sockets.sockets.get(game.p2.socketId);
