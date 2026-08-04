@@ -267,8 +267,10 @@ function endGame(gameId, reason, winnerWallet) {
   io.to(game.p1.socketId).emit('gameOver', { result: reason, winner: winnerWallet, payout });
   io.to(game.p2.socketId).emit('gameOver', { result: reason, winner: winnerWallet, payout });
 
-  sendUserData(io.sockets.sockets.get(game.p1.socketId), game.p1.wallet);
-  sendUserData(io.sockets.sockets.get(game.p2.socketId), game.p2.wallet);
+  const s1 = io.sockets.sockets.get(game.p1.socketId);
+  const s2 = io.sockets.sockets.get(game.p2.socketId);
+  if (s1) sendUserData(s1, game.p1.wallet);
+  if (s2) sendUserData(s2, game.p2.wallet);
 
   delete activeGames[gameId];
 }
