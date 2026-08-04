@@ -174,13 +174,13 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Եթե խաղացողը չեղարկում է հերթը մինչև մրցակից գտնելը
+  // Որոնման ձեռքով չեղարկում և գումարի հետվերադարձ
   socket.on('cancelQueue', async () => {
     const index = waitingPlayers.findIndex(p => p.socketId === socket.id);
     if (index !== -1) {
       const player = waitingPlayers.splice(index, 1)[0];
       await sendTonToWallet(player.wallet, player.bet, 'CryptoChess Refund');
-      socket.emit('cancelled', 'Հերթը չեղարկվեց, գումարը հետ ուղարկվեց ձեր դրամապանակ:');
+      socket.emit('queueCancelled', { message: 'Հերթը չեղարկվեց, գումարը վերադարձվեց ձեր դրամապանակ:' });
     }
   });
 
@@ -268,6 +268,7 @@ io.on('connection', (socket) => {
     onlineCount = Math.max(0, onlineCount - 1);
     broadcastStats();
 
+    // Եթե խաղացողը հերթում էր ու անջատվեց, գումարը հետ ենք ուղարկում
     const index = waitingPlayers.findIndex(p => p.socketId === socket.id);
     if (index !== -1) {
       const player = waitingPlayers.splice(index, 1)[0];

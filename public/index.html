@@ -37,6 +37,7 @@
     
     .btn { background: #0284c7; color: white; border: none; padding: 12px 18px; font-size: 15px; font-weight: 600; border-radius: 8px; cursor: pointer; }
     .btn:hover { background: #0369a1; }
+    .btn:disabled { background: #334155; color: #64748b; cursor: not-allowed; }
     .btn-warning { background: #f59e0b; color: #0f172a; font-weight: 700; } 
     .btn-success { background: #16a34a; color: white; font-weight: 700; } 
     .btn-danger { background: #ef4444; color: white; font-weight: 700; } 
@@ -156,6 +157,7 @@
         </div>
 
         <button id="findMatchBtn" class="btn">Գտնել Մրցակից</button>
+        <button id="cancelQueueBtn" class="btn btn-danger" style="display: none;" disabled>Չեղարկել որոնումը (30ս)</button>
         
         <div id="drawArea" style="display: none; width: 100%;">
           <button id="offerDrawBtn" class="btn btn-warning" style="width: 100%;">🤝 Առաջարկել Ոչ-ոքի</button>
@@ -188,8 +190,11 @@
     let playerColor = null;
     let currentGameId = null;
 
-    // Այստեղ գրեք ձեր գլխավոր (Treasury) դրամապանակի հասցեն, որտեղ պետք է նստեն խաղադրույքները
-    const TREASURY_WALLET = "UQANP71Yq43Vl0fV1R_k93393b-5h-8669485h9394993949"; 
+    let cancelTimer = null;
+    let cancelSecondsLeft = 30;
+
+    // Ձեր իրական Treasury դրամապանակի հասցեն
+    const TREASURY_WALLET = "EQCLfvbkTrdUJ1wfyNI9uOdcK30z1wbWWX060mrXBNwp2Tse"; 
 
     socket.on('statsUpdate', (data) => {
       document.getElementById('onlineCount').innerText = data.online;
@@ -275,7 +280,7 @@
       });
     }
 
-    // «Գտնել մրցակից» սեղմելիս նախ կատարվում է TON փոխանցում
+    // «Գտնել մրցակից» սեղմելիս կատարվում է իրական TON փոխանցում դեպի ձեր հասցեն
     document.getElementById('findMatchBtn').addEventListener('click', async () => {
       const bet = parseInt(document.getElementById('betAmount').value);
       
@@ -298,21 +303,59 @@
       };
 
       try {
-        // Բացվում է Tonkeeper-ը հաստատման համար
         await tonConnectUI.sendTransaction(transaction);
         
         document.getElementById('winner-banner').style.display = 'none';
-        document.getElementById('status').innerText = `Որոնում ենք մրցակից (${bet} TON)...`;
         document.getElementById('moveList').innerHTML = '';
         
-        // Ուղարկում ենք սերվերին միայն հաջող վճարումից հետո
         socket.emit('joinQueue', { wallet: walletAddress, bet: bet });
+        startQueueState();
 
       } catch (e) {
         console.error("Վճարումը չեղարկվեց:", e);
         document.getElementById('status').innerText = "Վճարումը չեղարկվեց կամ ձախողվեց:";
       }
     });
+
+    // Որոնման չեղարկման կոճակ
+    document.getElementById('cancelQueueBtn').addEventListener('click', () => {
+      socket.emit('cancelQueue', { wallet: walletAddress });
+    });
+
+    socket.on('queueCancelled', (data) => {
+      resetQueueUI();
+      document.getElementById('status').innerText = data.message || "Որոնումը չեղարկվեց, գումարը վերադարձվեց:";
+    });
+
+    function startQueueState() {
+      document.getElementById('findMatchBtn').style.display = 'none';
+      const cancelBtn = document.getElementById('cancelQueueBtn');
+      cancelBtn.style.display = 'block';
+      cancelBtn.disabled = true;
+      
+      cancelSecondsLeft = 30;
+      cancelBtn.innerText = `Չեղարկել որոնումը (${cancelSecondsLeft}ս)`;
+      document.getElementById('status').innerText = `Որոնում ենք մրցակից... (Չեղարկումը հնարավոր կլինի 30վ հետո)`;
+
+      if (cancelTimer) clearInterval(cancelTimer);
+      cancelTimer = setInterval(() => {
+        cancelSecondsLeft--;
+        if (cancelSecondsLeft > 0) {
+          cancelBtn.innerText = `Չեղարկել որոնումը (${cancelSecondsLeft}ս)`;
+        } else {
+          clearInterval(cancelTimer);
+          cancelBtn.disabled = false;
+          cancelBtn.innerText = "Չեղարկել որոնումը";
+        }
+      }, 1000);
+    }
+
+    function resetQueueUI() {
+      if (cancelTimer) clearInterval(cancelTimer);
+      document.getElementById('cancelQueueBtn').style.display = 'none';
+      document.getElementById('findMatchBtn').style.display = 'block';
+      document.getElementById('status').innerText = "Պատրաստ է որոնման";
+    }
 
     document.getElementById('drawArea').addEventListener('click', (e) => {
       if (e.target.id === 'offerDrawBtn') {
@@ -331,6 +374,9 @@
     });
 
     socket.on('gameStart', (data) => {
+      if (cancelTimer) clearInterval(cancelTimer);
+      document.getElementById('cancelQueueBtn').style.display = 'none';
+
       currentGameId = data.gameId;
       playerColor = data.color;
       game.reset();
